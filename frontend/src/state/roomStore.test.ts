@@ -25,7 +25,7 @@ describe("RoomStore", () => {
   it("createRoom persists the creator's identity as host", async () => {
     vi.mocked(api.createRoom).mockResolvedValue({
       participantId: "p1",
-      room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+      room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false, strokes: [], guesses: [] }
     });
 
     const store = new RoomStore();
@@ -37,7 +37,7 @@ describe("RoomStore", () => {
   it("joinRoom persists the joiner's identity as non-host", async () => {
     vi.mocked(api.joinRoom).mockResolvedValue({
       participantId: "p2",
-      room: { code: "WXYZ", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+      room: { code: "WXYZ", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false, strokes: [], guesses: [] }
     });
 
     const store = new RoomStore();
@@ -58,10 +58,10 @@ describe("RoomStore", () => {
     it("startPolling calls fetchRoom on each tick and stopPolling clears it", async () => {
       vi.mocked(api.createRoom).mockResolvedValue({
         participantId: "p1",
-        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false, strokes: [], guesses: [] }
       });
       vi.mocked(api.fetchRoom).mockResolvedValue({
-        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false, strokes: [], guesses: [] }
       });
 
       const store = new RoomStore();
@@ -84,7 +84,7 @@ describe("RoomStore", () => {
     it("restores room/participant state from a stored identity plus a successful fetch", async () => {
       setStoredIdentity("ABCD", { participantId: "p1", isHost: true });
       vi.mocked(api.fetchRoom).mockResolvedValue({
-        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false, strokes: [], guesses: [] }
       });
 
       const store = new RoomStore();

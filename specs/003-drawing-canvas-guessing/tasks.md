@@ -34,7 +34,7 @@ spec.md priorities — US1/US3/US4/US5 are P1, US2 is P2).
 
 **Purpose**: Confirm a clean starting point before making changes
 
-- [ ] T001 Run `npm run build && npm test` in `backend/` and `frontend/` and confirm both pass on the current `003-drawing-canvas-guessing` branch before any code changes
+- [X] T001 Run `npm run build && npm test` in `backend/` and `frontend/` and confirm both pass on the current `003-drawing-canvas-guessing` branch before any code changes
 
 ---
 
@@ -44,11 +44,11 @@ spec.md priorities — US1/US3/US4/US5 are P1, US2 is P2).
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Add `Stroke` (`{ points: { x: number; y: number }[] }`) and `GuessEntry` (`{ id, participantId, text, correct, submittedAt }`) types to `backend/src/models/game.ts`; add `strokes: Stroke[]` and `guesses: GuessEntry[]` to `Room`; add `score: number` to `Participant`
-- [ ] T003 Add `GuessSnapshotEntry` (`{ id, participantId, correct, text? }`) type, `strokes: Stroke[]` and `guesses: GuessSnapshotEntry[]` to `RoomSnapshot`, and `score: number` to `RoomSnapshotParticipant`, in `backend/src/models/game.ts`
-- [ ] T004 [P] In `backend/src/services/roomStore.ts`, initialize `score: 0` in `createParticipant()` and `strokes: []`/`guesses: []` on the `Room` created in `createRoom()`
-- [ ] T005 [P] Mirror `Stroke`, `GuessSnapshotEntry` types, `Participant.score`, and `RoomSnapshot.strokes`/`guesses` in `frontend/src/services/api.ts`
-- [ ] T006 In `toRoomSnapshot()` in `backend/src/services/roomStore.ts`, add `strokes: room.strokes` to the returned object, unconditionally for every viewer (no redaction — strokes are never secret). This must land here, not deferred to a later story's phase, so that US1/US2's own quickstart scenarios (guesser-side canvas sync) pass at their own checkpoint
+- [X] T002 Add `Stroke` (`{ points: { x: number; y: number }[] }`) and `GuessEntry` (`{ id, participantId, text, correct, submittedAt }`) types to `backend/src/models/game.ts`; add `strokes: Stroke[]` and `guesses: GuessEntry[]` to `Room`; add `score: number` to `Participant`
+- [X] T003 Add `GuessSnapshotEntry` (`{ id, participantId, correct, text? }`) type, `strokes: Stroke[]` and `guesses: GuessSnapshotEntry[]` to `RoomSnapshot`, and `score: number` to `RoomSnapshotParticipant`, in `backend/src/models/game.ts`
+- [X] T004 [P] In `backend/src/services/roomStore.ts`, initialize `score: 0` in `createParticipant()` and `strokes: []`/`guesses: []` on the `Room` created in `createRoom()`
+- [X] T005 [P] Mirror `Stroke`, `GuessSnapshotEntry` types, `Participant.score`, and `RoomSnapshot.strokes`/`guesses` in `frontend/src/services/api.ts`
+- [X] T006 In `toRoomSnapshot()` in `backend/src/services/roomStore.ts`, add `strokes: room.strokes` to the returned object, unconditionally for every viewer (no redaction — strokes are never secret). This must land here, not deferred to a later story's phase, so that US1/US2's own quickstart scenarios (guesser-side canvas sync) pass at their own checkpoint
 
 **Checkpoint**: Model/type foundation ready, and strokes already flow through the polled snapshot — user story implementation can now begin
 
@@ -60,17 +60,17 @@ spec.md priorities — US1/US3/US4/US5 are P1, US2 is P2).
 
 **Independent Test**: As the drawer, press-drag to draw a stroke and confirm it renders immediately; lift and draw again to confirm a separate stroke; confirm a guesser's drawing attempts produce no stroke; confirm a guesser's canvas reflects the drawer's strokes within one poll cycle (covered now that T006 already wires `strokes` into the snapshot).
 
-- [ ] T007 [US1] Add `strokeSchema` (`{ participantId: string, points: { x: number; y: number }[] }`, `points` min length 1) to `backend/src/api/schemas.ts`
-- [ ] T008 [US1] Add `addStroke(code, participantId, points)` to `backend/src/services/roomStore.ts`: returns a typed failure for room-not-found/not-drawer/round-not-active, otherwise appends a `Stroke` to `room.strokes`
-- [ ] T009 [P] [US1] Add `POST /:code/strokes` to `backend/src/api/rooms.ts`, mapping `addStroke`'s failure reasons to `403`/`404`/`409` per `contracts/rooms-api.md`
-- [ ] T010 [P] [US1] Add cases to `backend/src/services/roomStore.test.ts`: `addStroke` appends a stroke for the drawer; rejects a non-drawer; rejects when the room isn't active
-- [ ] T011 [P] [US1] Add cases to `backend/src/api/schemas.test.ts` for `strokeSchema`: rejects empty `points`; accepts a valid points array
-- [ ] T012 [P] [US1] Add cases to `backend/src/api/rooms.test.ts` for `POST /:code/strokes`: `200` for the drawer, `403` for a non-drawer, `404` for an unknown room, `409` for a non-active room
-- [ ] T013 [US1] Add `addStroke(code, participantId, points)` to `frontend/src/services/api.ts`
-- [ ] T014 [US1] Create `frontend/src/components/DrawingCanvas.tsx`: a `<canvas>` with pointer handlers that build a `Stroke`'s `points` from pointer-down/move/up (new stroke per pointer-down), paint it immediately via `getContext("2d")` on the drawer's own canvas, and call the store's `drawStroke` on pointer-up; renders read-only (no handlers) for non-drawer viewers, painting `room.strokes` from the polled snapshot (already populated since T006)
-- [ ] T015 [P] [US1] Add `drawStroke(points)` to `frontend/src/state/roomStore.ts` calling `api.addStroke` and updating `RoomState` from the returned snapshot
-- [ ] T016 [US1] Replace the canvas placeholder in `frontend/src/pages/GamePage.tsx` with `<DrawingCanvas>`
-- [ ] T017 [P] [US1] Add unit tests for `DrawingCanvas`'s pointer-to-stroke point-accumulation logic (new stroke starts on pointer-down after a pointer-up, points appended while pressed), isolated from actual canvas painting per research.md's testing strategy
+- [X] T007 [US1] Add `strokeSchema` (`{ participantId: string, points: { x: number; y: number }[] }`, `points` min length 1) to `backend/src/api/schemas.ts`
+- [X] T008 [US1] Add `addStroke(code, participantId, points)` to `backend/src/services/roomStore.ts`: returns a typed failure for room-not-found/not-drawer/round-not-active, otherwise appends a `Stroke` to `room.strokes`
+- [X] T009 [P] [US1] Add `POST /:code/strokes` to `backend/src/api/rooms.ts`, mapping `addStroke`'s failure reasons to `403`/`404`/`409` per `contracts/rooms-api.md`
+- [X] T010 [P] [US1] Add cases to `backend/src/services/roomStore.test.ts`: `addStroke` appends a stroke for the drawer; rejects a non-drawer; rejects when the room isn't active
+- [X] T011 [P] [US1] Add cases to `backend/src/api/schemas.test.ts` for `strokeSchema`: rejects empty `points`; accepts a valid points array
+- [X] T012 [P] [US1] Add cases to `backend/src/api/rooms.test.ts` for `POST /:code/strokes`: `200` for the drawer, `403` for a non-drawer, `404` for an unknown room, `409` for a non-active room
+- [X] T013 [US1] Add `addStroke(code, participantId, points)` to `frontend/src/services/api.ts`
+- [X] T014 [US1] Create `frontend/src/components/DrawingCanvas.tsx`: a `<canvas>` with pointer handlers that build a `Stroke`'s `points` from pointer-down/move/up (new stroke per pointer-down), paint it immediately via `getContext("2d")` on the drawer's own canvas, and call the store's `drawStroke` on pointer-up; renders read-only (no handlers) for non-drawer viewers, painting `room.strokes` from the polled snapshot (already populated since T006)
+- [X] T015 [P] [US1] Add `drawStroke(points)` to `frontend/src/state/roomStore.ts` calling `api.addStroke` and updating `RoomState` from the returned snapshot
+- [X] T016 [US1] Replace the canvas placeholder in `frontend/src/pages/GamePage.tsx` with `<DrawingCanvas>`
+- [X] T017 [P] [US1] Add unit tests for `DrawingCanvas`'s pointer-to-stroke point-accumulation logic (new stroke starts on pointer-down after a pointer-up, points appended while pressed), isolated from actual canvas painting per research.md's testing strategy
 
 **Checkpoint**: User Story 1 is independently functional and testable, including guesser-side polling sync
 
@@ -82,13 +82,13 @@ spec.md priorities — US1/US3/US4/US5 are P1, US2 is P2).
 
 **Independent Test**: As the drawer, draw several strokes, trigger clear, and confirm the canvas is immediately blank for the drawer and (within one poll) for guessers, with no clear control available to guessers.
 
-- [ ] T018 [US2] Add `clearCanvasSchema` (`{ participantId: string }`) to `backend/src/api/schemas.ts`
-- [ ] T019 [US2] Add `clearCanvas(code, participantId)` to `backend/src/services/roomStore.ts`: same role/active checks as `addStroke`, sets `room.strokes = []`, does not touch `guesses` or any `score`
-- [ ] T020 [P] [US2] Add `POST /:code/clear` to `backend/src/api/rooms.ts`, same error mapping pattern as the strokes route
-- [ ] T021 [P] [US2] Add cases to `backend/src/services/roomStore.test.ts`: `clearCanvas` empties `strokes`; leaves `guesses`/scores untouched; rejects a non-drawer
-- [ ] T022 [P] [US2] Add cases to `backend/src/api/rooms.test.ts` for `POST /:code/clear`: `200`/`403`/`404`/`409`
-- [ ] T023 [US2] Add `clearCanvas()` to `frontend/src/services/api.ts` and a corresponding method on `frontend/src/state/roomStore.ts`
-- [ ] T024 [US2] Add a drawer-only "Clear" control to `frontend/src/components/DrawingCanvas.tsx` calling the store's `clearCanvas`
+- [X] T018 [US2] Add `clearCanvasSchema` (`{ participantId: string }`) to `backend/src/api/schemas.ts`
+- [X] T019 [US2] Add `clearCanvas(code, participantId)` to `backend/src/services/roomStore.ts`: same role/active checks as `addStroke`, sets `room.strokes = []`, does not touch `guesses` or any `score`
+- [X] T020 [P] [US2] Add `POST /:code/clear` to `backend/src/api/rooms.ts`, same error mapping pattern as the strokes route
+- [X] T021 [P] [US2] Add cases to `backend/src/services/roomStore.test.ts`: `clearCanvas` empties `strokes`; leaves `guesses`/scores untouched; rejects a non-drawer
+- [X] T022 [P] [US2] Add cases to `backend/src/api/rooms.test.ts` for `POST /:code/clear`: `200`/`403`/`404`/`409`
+- [X] T023 [US2] Add `clearCanvas()` to `frontend/src/services/api.ts` and a corresponding method on `frontend/src/state/roomStore.ts`
+- [X] T024 [US2] Add a drawer-only "Clear" control to `frontend/src/components/DrawingCanvas.tsx` calling the store's `clearCanvas`
 
 **Checkpoint**: User Stories 1 and 2 both work independently
 
@@ -100,15 +100,15 @@ spec.md priorities — US1/US3/US4/US5 are P1, US2 is P2).
 
 **Independent Test**: As a guesser, submit a blank guess (rejected, nothing recorded) and a padded guess (trimmed and recorded); as the drawer, attempt to submit a guess (rejected).
 
-- [ ] T025 [US3] Add `guessSchema` (`{ participantId: string, text: z.string().trim().min(1, "Guess is required") }`) to `backend/src/api/schemas.ts`
-- [ ] T026 [US3] Add `submitGuess(code, participantId, text)` to `backend/src/services/roomStore.ts`: rejects the drawer and a non-active room, otherwise compares the trimmed `text` to `room.secretWord` case-insensitively and appends a fully-formed `GuessEntry` (`id`, `participantId`, `text`, `correct`, `submittedAt`) to `room.guesses`
-- [ ] T027 [P] [US3] Add `POST /:code/guesses` to `backend/src/api/rooms.ts`, mapping `submitGuess`'s failure reasons to `400`/`403`/`404`/`409` per `contracts/rooms-api.md`
-- [ ] T028 [P] [US3] Add cases to `backend/src/services/roomStore.test.ts`: trims input before comparing/recording; rejects empty/whitespace-only text; rejects a submission from the drawer; rejects when the room isn't active; records a non-matching guess with `correct: false`
-- [ ] T029 [P] [US3] Add cases to `backend/src/api/schemas.test.ts` for `guessSchema`: rejects blank/whitespace `text`; trims a padded value
-- [ ] T030 [P] [US3] Add cases to `backend/src/api/rooms.test.ts` for `POST /:code/guesses`: `200` for a guesser, `400` for a blank guess, `403` for the drawer, `404`/`409` as appropriate
-- [ ] T031 [US3] Add `submitGuess(code, participantId, text)` to `frontend/src/services/api.ts`
-- [ ] T032 [US3] Add a `submitGuess(text)` method to `frontend/src/state/roomStore.ts` calling `api.submitGuess` and updating `RoomState` from the returned snapshot
-- [ ] T033 [US3] Wire `frontend/src/components/GuessForm.tsx`'s `onSubmit` to the store's `submitGuess`, clearing the input on success and surfacing the rejection message on failure; disabled when the viewer is the drawer
+- [X] T025 [US3] Add `guessSchema` (`{ participantId: string, text: z.string().trim().min(1, "Guess is required") }`) to `backend/src/api/schemas.ts`
+- [X] T026 [US3] Add `submitGuess(code, participantId, text)` to `backend/src/services/roomStore.ts`: rejects the drawer and a non-active room, otherwise compares the trimmed `text` to `room.secretWord` case-insensitively and appends a fully-formed `GuessEntry` (`id`, `participantId`, `text`, `correct`, `submittedAt`) to `room.guesses`
+- [X] T027 [P] [US3] Add `POST /:code/guesses` to `backend/src/api/rooms.ts`, mapping `submitGuess`'s failure reasons to `400`/`403`/`404`/`409` per `contracts/rooms-api.md`
+- [X] T028 [P] [US3] Add cases to `backend/src/services/roomStore.test.ts`: trims input before comparing/recording; rejects empty/whitespace-only text; rejects a submission from the drawer; rejects when the room isn't active; records a non-matching guess with `correct: false`
+- [X] T029 [P] [US3] Add cases to `backend/src/api/schemas.test.ts` for `guessSchema`: rejects blank/whitespace `text`; trims a padded value
+- [X] T030 [P] [US3] Add cases to `backend/src/api/rooms.test.ts` for `POST /:code/guesses`: `200` for a guesser, `400` for a blank guess, `403` for the drawer, `404`/`409` as appropriate
+- [X] T031 [US3] Add `submitGuess(code, participantId, text)` to `frontend/src/services/api.ts`
+- [X] T032 [US3] Add a `submitGuess(text)` method to `frontend/src/state/roomStore.ts` calling `api.submitGuess` and updating `RoomState` from the returned snapshot
+- [X] T033 [US3] Wire `frontend/src/components/GuessForm.tsx`'s `onSubmit` to the store's `submitGuess`, clearing the input on success and surfacing the rejection message on failure; disabled when the viewer is the drawer
 
 **Checkpoint**: User Stories 1-3 all work independently
 
@@ -120,11 +120,11 @@ spec.md priorities — US1/US3/US4/US5 are P1, US2 is P2).
 
 **Independent Test**: Submit an incorrect guess as one guesser and confirm a second guesser's history shows the attempt without the text; submit the correct word and confirm the text is now visible to the second guesser too.
 
-- [ ] T034 [US4] In `toRoomSnapshot()` in `backend/src/services/roomStore.ts`, project `room.guesses` into `GuessSnapshotEntry[]` per viewer: include `text` when the viewer is the drawer, the submitting guesser, or `entry.correct` is `true`; omit `text` otherwise. (`strokes` is already wired in unconditionally by T006 — this task only adds the `guesses` projection.)
-- [ ] T035 [P] [US4] Add cases to `backend/src/services/roomStore.test.ts`: drawer's snapshot includes `text` for every entry; a guesser's snapshot includes `text` for their own entries and any `correct: true` entry, and omits `text` for other guessers' incorrect entries
-- [ ] T036 [P] [US4] Add route-level cases to `backend/src/api/rooms.test.ts`: `GET /:code` as different viewers returns differently-redacted `guesses` arrays matching the examples in `contracts/rooms-api.md`
-- [ ] T037 [US4] Render `room.guesses` in `frontend/src/components/ResultPanel.tsx` (replacing the placeholder): guesser name + correct/incorrect marker always, literal guessed text only when present on the entry
-- [ ] T038 [P] [US4] Add a case to `frontend/src/services/api.test.ts` reflecting `strokes`/`guesses` in a `fetchRoom` response, including both a full entry (with `text`) and a redacted entry (no `text` key)
+- [X] T034 [US4] In `toRoomSnapshot()` in `backend/src/services/roomStore.ts`, project `room.guesses` into `GuessSnapshotEntry[]` per viewer: include `text` when the viewer is the drawer, the submitting guesser, or `entry.correct` is `true`; omit `text` otherwise. (`strokes` is already wired in unconditionally by T006 — this task only adds the `guesses` projection.)
+- [X] T035 [P] [US4] Add cases to `backend/src/services/roomStore.test.ts`: drawer's snapshot includes `text` for every entry; a guesser's snapshot includes `text` for their own entries and any `correct: true` entry, and omits `text` for other guessers' incorrect entries
+- [X] T036 [P] [US4] Add route-level cases to `backend/src/api/rooms.test.ts`: `GET /:code` as different viewers returns differently-redacted `guesses` arrays matching the examples in `contracts/rooms-api.md`
+- [X] T037 [US4] Render `room.guesses` in `frontend/src/components/ResultPanel.tsx` (replacing the placeholder): guesser name + correct/incorrect marker always, literal guessed text only when present on the entry
+- [X] T038 [P] [US4] Add a case to `frontend/src/services/api.test.ts` reflecting `strokes`/`guesses` in a `fetchRoom` response, including both a full entry (with `text`) and a redacted entry (no `text` key)
 
 **Checkpoint**: User Stories 1-4 all work independently and together
 
@@ -136,10 +136,10 @@ spec.md priorities — US1/US3/US4/US5 are P1, US2 is P2).
 
 **Independent Test**: Submit the secret word in a different case and confirm the score increases by exactly 100; submit an incorrect word from another guesser and confirm their score is unchanged; replay an identical guess sequence and confirm identical final scores.
 
-- [ ] T039 [US5] In `submitGuess()` in `backend/src/services/roomStore.ts` (extending T026), increment the submitting participant's `score` by exactly `100` when `correct` is `true`, atomically with appending the `GuessEntry`; leave `score` unchanged otherwise
-- [ ] T040 [P] [US5] Add cases to `backend/src/services/roomStore.test.ts`: a correct guess (including a different-case match) increases the submitting participant's score by exactly 100; an incorrect guess leaves it unchanged; a second correct guess from the same participant adds another 100; an incorrect guess submitted *after* an earlier correct guess from the same participant still adds 0 and is still recorded (FR-014); every participant's score is 0 immediately after a round starts; replaying an identical sequence of guesses (same secret word, same texts, same order) against a fresh room produces identical final scores (SC-006)
-- [ ] T041 [P] [US5] Add a case to `backend/src/api/rooms.test.ts`: `POST /:code/guesses`'s response reflects the updated `score` in the snapshot's `participants`
-- [ ] T042 [US5] Render each participant's `score` in `frontend/src/components/Scoreboard.tsx` (replacing the placeholder), sorted descending by score
+- [X] T039 [US5] In `submitGuess()` in `backend/src/services/roomStore.ts` (extending T026), increment the submitting participant's `score` by exactly `100` when `correct` is `true`, atomically with appending the `GuessEntry`; leave `score` unchanged otherwise
+- [X] T040 [P] [US5] Add cases to `backend/src/services/roomStore.test.ts`: a correct guess (including a different-case match) increases the submitting participant's score by exactly 100; an incorrect guess leaves it unchanged; a second correct guess from the same participant adds another 100; an incorrect guess submitted *after* an earlier correct guess from the same participant still adds 0 and is still recorded (FR-014); every participant's score is 0 immediately after a round starts; replaying an identical sequence of guesses (same secret word, same texts, same order) against a fresh room produces identical final scores (SC-006)
+- [X] T041 [P] [US5] Add a case to `backend/src/api/rooms.test.ts`: `POST /:code/guesses`'s response reflects the updated `score` in the snapshot's `participants`
+- [X] T042 [US5] Render each participant's `score` in `frontend/src/components/Scoreboard.tsx` (replacing the placeholder), sorted descending by score
 
 **Checkpoint**: All five user stories work independently and together — this phase's full scope is complete
 
@@ -149,8 +149,8 @@ spec.md priorities — US1/US3/US4/US5 are P1, US2 is P2).
 
 **Purpose**: Final end-to-end validation
 
-- [ ] T043 Walk through `specs/003-drawing-canvas-guessing/quickstart.md` end-to-end across three browser tabs (drawer + two guessers): drawing/clearing visibility, guess validation, redacted guess-history sync, and deterministic scoring all match `contracts/rooms-api.md` and the spec
-- [ ] T044 Run `npm run build && npm test` in both `backend/` and `frontend/` and confirm all green
+- [X] T043 Walk through `specs/003-drawing-canvas-guessing/quickstart.md` end-to-end across three browser tabs (drawer + two guessers): drawing/clearing visibility, guess validation, redacted guess-history sync, and deterministic scoring all match `contracts/rooms-api.md` and the spec. **Verified via curl against a live `npm run dev` instance** for every backend contract scenario (draw/clear role-gating, guess validation, redaction per viewer, scoring with trim/case-insensitivity) — all matched exactly. **Not done**: the actual two/three-browser-tab visual walkthrough (pointer-drawn strokes rendering on `<canvas>`, the Clear button, live polling UI) — recommend the user verify this manually in a browser, since canvas painting and pointer events can't be driven from this environment (see research.md's canvas-testing note)
+- [X] T044 Run `npm run build && npm test` in both `backend/` and `frontend/` and confirm all green — 68 backend tests / 23 frontend tests, all passing
 
 ---
 

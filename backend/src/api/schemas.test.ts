@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createRoomSchema, joinRoomSchema, roomCodeParamsSchema, startGameSchema } from "./schemas.js";
+import {
+  clearCanvasSchema,
+  createRoomSchema,
+  guessSchema,
+  joinRoomSchema,
+  roomCodeParamsSchema,
+  startGameSchema,
+  strokeSchema
+} from "./schemas.js";
 
 describe("schemas", () => {
   it("createRoomSchema accepts a valid body with playerName", () => {
@@ -52,5 +60,30 @@ describe("schemas", () => {
     const result = startGameSchema.parse({ participantId: "p1" });
 
     expect(result.participantId).toBe("p1");
+  });
+
+  it("strokeSchema rejects empty points", () => {
+    expect(() => strokeSchema.parse({ participantId: "p1", points: [] })).toThrow();
+  });
+
+  it("strokeSchema accepts a valid points array", () => {
+    const result = strokeSchema.parse({ participantId: "p1", points: [{ x: 1, y: 2 }] });
+
+    expect(result.points).toEqual([{ x: 1, y: 2 }]);
+  });
+
+  it("clearCanvasSchema rejects a missing participantId", () => {
+    expect(() => clearCanvasSchema.parse({})).toThrow();
+  });
+
+  it("guessSchema rejects a blank or whitespace-only text", () => {
+    expect(() => guessSchema.parse({ participantId: "p1", text: "" })).toThrow("Guess is required");
+    expect(() => guessSchema.parse({ participantId: "p1", text: "   " })).toThrow("Guess is required");
+  });
+
+  it("guessSchema trims a padded text", () => {
+    const result = guessSchema.parse({ participantId: "p1", text: "  pizza  " });
+
+    expect(result.text).toBe("pizza");
   });
 });

@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { createRoom, joinRoom, selectSecretWord, startGame, toRoomSnapshot } from "./roomStore.js";
+import {
+  addStroke,
+  clearCanvas,
+  createRoom,
+  joinRoom,
+  selectSecretWord,
+  startGame,
+  submitGuess,
+  toRoomSnapshot
+} from "./roomStore.js";
 import { STARTER_WORDS } from "../seed/starterData.js";
+
+function startActiveRoom() {
+  const { room, participantId: hostId } = createRoom("Alice");
+  const joined = joinRoom(room.code, "Bob");
+  const started = startGame(room.code, hostId);
+  const startedRoom = (started as { room: typeof room }).room;
+
+  return { room: startedRoom, hostId, guesserId: joined!.participantId };
+}
 
 describe("roomStore", () => {
   describe("selectSecretWord", () => {
@@ -173,6 +191,212 @@ describe("roomStore", () => {
       const snapshot = toRoomSnapshot(room, hostId);
       expect(snapshot.secretWord).toBeUndefined();
       expect(snapshot.availableWords).toEqual([]);
+    });
+  });
+
+  describe("addStroke", () => {
+    it("appends a stroke for the drawer", () => {
+      const { room, hostId } = startActiveRoom();
+      const points = [{ x: 1, y: 2 }, { x: 3, y: 4 }];
+
+      const result = addStroke(room.code, hostId, points);
+
+      expect(result.ok).toBe(true);
+      expect((result as { room: typeof room }).room.strokes).toEqual([{ points }]);
+    });
+
+    it("rejects a non-drawer", () => {
+      const { room, guesserId } = startActiveRoom();
+
+      const result = addStroke(room.code, guesserId, [{ x: 0, y: 0 }]);
+
+      expect(result.ok).toBe(false);
+      expect((result as { reason: string }).reason).toBe("not_drawer");
+    });
+
+    it("rejects when the room isn't active", () => {
+      const { room, participantId: hostId } = createRoom("Alice");
+      joinRoom(room.code, "Bob");
+
+      const result = addStroke(room.code, hostId, [{ x: 0, y: 0 }]);
+
+      expect(result.ok).toBe(false);
+      expect((result as { reason: string }).reason).toBe("not_active");
+    });
+  });
+
+  describe("clearCanvas", () => {
+    it("empties strokes and leaves guesses/scores untouched", () => {
+      const { room, hostId } = startActiveRoom();
+      addStroke(room.code, hostId, [{ x: 1, y: 1 }]);
+
+      const result = clearCanvas(room.code, hostId);
+
+      expect(result.ok).toBe(true);
+      const clearedRoom = (result as { room: typeof room }).room;
+      expect(clearedRoom.strokes).toEqual([]);
+      expect(clearedRoom.guesses).toEqual([]);
+      expect(clearedRoom.participants.every((p) => p.score === 0)).toBe(true);
+    });
+
+    it("rejects a non-drawer", () => {
+      const { room, guesserId } = startActiveRoom();
+
+      const result = clearCanvas(room.code, guesserId);
+
+      expect(result.ok).toBe(false);
+      expect((result as { reason: string }).reason).toBe("not_drawer");
+    });
+  });
+
+  describe("submitGuess", () => {
+    it("trims input before recording and comparing", () => {
+      const { room, guesserId } = startActiveRoom();
+
+      const result = submitGuess(room.code, guesserId, `  ${room.secretWord}  `);
+
+      expect(result.ok).toBe(true);
+      const guess = (result as { guess: { text: string; correct: boolean } }).guess;
+      expect(guess.text).toBe(room.secretWord);
+      expect(guess.correct).toBe(true);
+    });
+
+    it("matches the secret word case-insensitively", () => {
+      const { room, guesserId } = startActiveRoom();
+
+      const result = submitGuess(room.code, guesserId, room.secretWord!.toUpperCase());
+
+      expect(result.ok).toBe(true);
+      expect((result as { guess: { correct: boolean } }).guess.correct).toBe(true);
+    });
+
+    it("records a non-matching guess with correct: false", () => {
+      const { room, guesserId } = startActiveRoom();
+      const wrongWord = STARTER_WORDS.find((word) => word !== room.secretWord)!;
+
+      const result = submitGuess(room.code, guesserId, wrongWord);
+
+      expect(result.ok).toBe(true);
+      expect((result as { guess: { correct: boolean } }).guess.correct).toBe(false);
+    });
+
+    it("rejects a submission from the drawer", () => {
+      const { room, hostId } = startActiveRoom();
+
+      const result = submitGuess(room.code, hostId, "anything");
+
+      expect(result.ok).toBe(false);
+      expect((result as { reason: string }).reason).toBe("not_guesser");
+    });
+
+    it("rejects when the room isn't active", () => {
+      const { room, participantId: hostId } = createRoom("Alice");
+      const joined = joinRoom(room.code, "Bob");
+
+      const result = submitGuess(room.code, joined!.participantId, "anything");
+
+      expect(result.ok).toBe(false);
+      expect((result as { reason: string }).reason).toBe("not_active");
+      void hostId;
+    });
+
+    it("increases the guesser's score by exactly 100 on a correct guess and leaves it unchanged on an incorrect one", () => {
+      const { room, guesserId } = startActiveRoom();
+      const wrongWord = STARTER_WORDS.find((word) => word !== room.secretWord)!;
+
+      const incorrect = submitGuess(room.code, guesserId, wrongWord);
+      const afterIncorrect = (incorrect as { room: typeof room }).room;
+      expect(afterIncorrect.participants.find((p) => p.id === guesserId)?.score).toBe(0);
+
+      const correct = submitGuess(room.code, guesserId, room.secretWord!);
+      const afterCorrect = (correct as { room: typeof room }).room;
+      expect(afterCorrect.participants.find((p) => p.id === guesserId)?.score).toBe(100);
+    });
+
+    it("adds another 100 for a second correct guess from the same participant", () => {
+      const { room, guesserId } = startActiveRoom();
+
+      submitGuess(room.code, guesserId, room.secretWord!);
+      const second = submitGuess(room.code, guesserId, room.secretWord!);
+      const afterSecond = (second as { room: typeof room }).room;
+
+      expect(afterSecond.participants.find((p) => p.id === guesserId)?.score).toBe(200);
+    });
+
+    it("adds 0 for an incorrect guess submitted after an earlier correct guess from the same participant", () => {
+      const { room, guesserId } = startActiveRoom();
+      const wrongWord = STARTER_WORDS.find((word) => word !== room.secretWord)!;
+
+      submitGuess(room.code, guesserId, room.secretWord!);
+      const afterWrong = submitGuess(room.code, guesserId, wrongWord);
+      const result = (afterWrong as { room: typeof room; guess: { correct: boolean } });
+
+      expect(result.guess.correct).toBe(false);
+      expect(result.room.participants.find((p) => p.id === guesserId)?.score).toBe(100);
+      expect(result.room.guesses).toHaveLength(2);
+    });
+
+    it("every participant's score is 0 immediately after a round starts", () => {
+      const { room } = startActiveRoom();
+
+      expect(room.participants.every((p) => p.score === 0)).toBe(true);
+    });
+
+    it("replaying an identical guess sequence against the same secret word always produces identical final scores", () => {
+      function playSequence() {
+        const { room, guesserId } = startActiveRoom();
+        const wrongWord = STARTER_WORDS.find((word) => word !== room.secretWord)!;
+
+        submitGuess(room.code, guesserId, wrongWord);
+        submitGuess(room.code, guesserId, room.secretWord!);
+        submitGuess(room.code, guesserId, wrongWord);
+        const final = submitGuess(room.code, guesserId, room.secretWord!);
+
+        return (final as { room: typeof room }).room.participants.find((p) => p.id === guesserId)?.score;
+      }
+
+      const firstTrial = playSequence();
+      const secondTrial = playSequence();
+
+      expect(firstTrial).toBe(200);
+      expect(secondTrial).toBe(200);
+      expect(firstTrial).toBe(secondTrial);
+    });
+  });
+
+  describe("toRoomSnapshot guess redaction", () => {
+    it("includes literal text for the drawer on every entry", () => {
+      const { room, hostId, guesserId } = startActiveRoom();
+      const wrongWord = STARTER_WORDS.find((word) => word !== room.secretWord)!;
+      submitGuess(room.code, guesserId, wrongWord);
+      submitGuess(room.code, guesserId, room.secretWord!);
+      const updated = (submitGuess(room.code, guesserId, room.secretWord!) as { room: typeof room }).room;
+
+      const drawerSnapshot = toRoomSnapshot(updated, hostId);
+      expect(drawerSnapshot.guesses.every((g) => typeof g.text === "string")).toBe(true);
+    });
+
+    it("includes text for the submitting guesser's own entries and any correct entry, omits text for other guessers' incorrect entries", () => {
+      const { room, hostId, guesserId } = startActiveRoom();
+      const thirdJoin = joinRoom(room.code, "Cara");
+      const otherGuesserId = thirdJoin!.participantId;
+      const wrongWord = STARTER_WORDS.find((word) => word !== room.secretWord)!;
+
+      const incorrect = submitGuess(room.code, guesserId, wrongWord);
+      const afterIncorrect = (incorrect as { room: typeof room }).room;
+      const correct = submitGuess(room.code, guesserId, room.secretWord!);
+      const afterCorrect = (correct as { room: typeof room }).room;
+      void afterIncorrect;
+      void hostId;
+
+      const otherGuesserSnapshot = toRoomSnapshot(afterCorrect, otherGuesserId);
+      const incorrectEntry = otherGuesserSnapshot.guesses.find((g) => g.correct === false);
+      const correctEntry = otherGuesserSnapshot.guesses.find((g) => g.correct === true);
+      expect(incorrectEntry?.text).toBeUndefined();
+      expect(correctEntry?.text).toBe(room.secretWord);
+
+      const ownerSnapshot = toRoomSnapshot(afterCorrect, guesserId);
+      expect(ownerSnapshot.guesses.find((g) => g.correct === false)?.text).toBe(wrongWord);
     });
   });
 });

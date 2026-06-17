@@ -7,7 +7,7 @@ import {
   useSyncExternalStore,
   type PropsWithChildren
 } from "react";
-import { ApiError, api, type RoomSessionResponse, type RoomSnapshot } from "../services/api";
+import { ApiError, api, type Point, type RoomSessionResponse, type RoomSnapshot } from "../services/api";
 import { clearStoredIdentity, getActiveRoomCode, getStoredIdentity, setStoredIdentity } from "./roomIdentity";
 
 export interface RoomState {
@@ -112,6 +112,36 @@ export class RoomStore {
       this.setRoomSnapshot(response.room);
       return response.room;
     });
+  }
+
+  async drawStroke(points: Point[]) {
+    if (!this.state.room || !this.state.participantId) {
+      return null;
+    }
+
+    const response = await api.addStroke(this.state.room.code, this.state.participantId, points);
+    this.setRoomSnapshot(response.room);
+    return response.room;
+  }
+
+  async clearCanvas() {
+    if (!this.state.room || !this.state.participantId) {
+      return null;
+    }
+
+    const response = await api.clearCanvas(this.state.room.code, this.state.participantId);
+    this.setRoomSnapshot(response.room);
+    return response.room;
+  }
+
+  async submitGuess(text: string) {
+    if (!this.state.room || !this.state.participantId) {
+      return null;
+    }
+
+    const response = await api.submitGuess(this.state.room.code, this.state.participantId, text);
+    this.setRoomSnapshot(response.room);
+    return response.room;
   }
 
   /** Reattaches this tab to its last known room/participant after a reload. No-op if nothing was stored. */

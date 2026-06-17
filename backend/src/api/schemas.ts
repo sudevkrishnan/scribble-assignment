@@ -24,6 +24,25 @@ export const startGameSchema = z.object({
   participantId: z.string().trim().min(1, "participantId is required")
 });
 
+export const pointSchema = z.object({
+  x: z.number(),
+  y: z.number()
+});
+
+export const strokeSchema = z.object({
+  participantId: z.string().trim().min(1, "participantId is required"),
+  points: z.array(pointSchema).min(1, "Stroke must have at least one point")
+});
+
+export const clearCanvasSchema = z.object({
+  participantId: z.string().trim().min(1, "participantId is required")
+});
+
+export const guessSchema = z.object({
+  participantId: z.string().trim().min(1, "participantId is required"),
+  text: z.string().trim().min(1, "Guess is required")
+});
+
 export class HttpError extends Error {
   statusCode: number;
 

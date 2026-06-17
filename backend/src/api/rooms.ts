@@ -1,19 +1,43 @@
 import { Router } from "express";
 import {
+  clearCanvasSchema,
   createRoomSchema,
+  guessSchema,
   HttpError,
   joinRoomSchema,
   ROOM_CODE_PATTERN,
   roomCodeParamsSchema,
   roomViewerQuerySchema,
-  startGameSchema
+  startGameSchema,
+  strokeSchema
 } from "./schemas.js";
-import { createRoom, getRoom, joinRoom, startGame, toRoomSnapshot } from "../services/roomStore.js";
+import {
+  addStroke,
+  clearCanvas,
+  createRoom,
+  getRoom,
+  joinRoom,
+  startGame,
+  submitGuess,
+  toRoomSnapshot
+} from "../services/roomStore.js";
 
 const START_GAME_ERROR_BY_REASON = {
   not_found: { statusCode: 404, message: "Room not found" },
   not_host: { statusCode: 403, message: "Only the host can start the game" },
   not_enough_players: { statusCode: 409, message: "At least 2 players are required to start" }
+} as const;
+
+const DRAWING_ACTION_ERROR_BY_REASON = {
+  not_found: { statusCode: 404, message: "Room not found" },
+  not_drawer: { statusCode: 403, message: "Only the drawer can draw" },
+  not_active: { statusCode: 409, message: "Round is not active" }
+} as const;
+
+const GUESS_ACTION_ERROR_BY_REASON = {
+  not_found: { statusCode: 404, message: "Room not found" },
+  not_guesser: { statusCode: 403, message: "The drawer cannot submit guesses" },
+  not_active: { statusCode: 409, message: "Round is not active" }
 } as const;
 
 export function createRoomsRouter() {
@@ -70,6 +94,63 @@ export function createRoomsRouter() {
 
       if (!result.ok) {
         const { statusCode, message } = START_GAME_ERROR_BY_REASON[result.reason];
+        throw new HttpError(statusCode, message);
+      }
+
+      response.json({
+        room: toRoomSnapshot(result.room, participantId)
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:code/strokes", (request, response, next) => {
+    try {
+      const { code } = roomCodeParamsSchema.parse(request.params);
+      const { participantId, points } = strokeSchema.parse(request.body);
+      const result = addStroke(code.toUpperCase(), participantId, points);
+
+      if (!result.ok) {
+        const { statusCode, message } = DRAWING_ACTION_ERROR_BY_REASON[result.reason];
+        throw new HttpError(statusCode, message);
+      }
+
+      response.json({
+        room: toRoomSnapshot(result.room, participantId)
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:code/clear", (request, response, next) => {
+    try {
+      const { code } = roomCodeParamsSchema.parse(request.params);
+      const { participantId } = clearCanvasSchema.parse(request.body);
+      const result = clearCanvas(code.toUpperCase(), participantId);
+
+      if (!result.ok) {
+        const { statusCode, message } = DRAWING_ACTION_ERROR_BY_REASON[result.reason];
+        throw new HttpError(statusCode, message);
+      }
+
+      response.json({
+        room: toRoomSnapshot(result.room, participantId)
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:code/guesses", (request, response, next) => {
+    try {
+      const { code } = roomCodeParamsSchema.parse(request.params);
+      const { participantId, text } = guessSchema.parse(request.body);
+      const result = submitGuess(code.toUpperCase(), participantId, text);
+
+      if (!result.ok) {
+        const { statusCode, message } = GUESS_ACTION_ERROR_BY_REASON[result.reason];
         throw new HttpError(statusCode, message);
       }
 

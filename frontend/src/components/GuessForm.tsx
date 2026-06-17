@@ -1,14 +1,27 @@
 import { useState } from "react";
+import { ApiError } from "../services/api";
+import { useRoomState, useRoomStore } from "../state/roomStore";
 
-interface GuessFormProps {
-  disabled?: boolean;
-}
-
-export function GuessForm({ disabled = false }: GuessFormProps) {
+export function GuessForm() {
+  const store = useRoomStore();
+  const { room, participantId } = useRoomState();
   const [guessText, setGuessText] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const viewer = room?.participants.find((participant) => participant.id === participantId) ?? null;
+  const disabled = Boolean(viewer?.isDrawer);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
+
+    try {
+      await store.submitGuess(guessText);
+      setGuessText("");
+    } catch (submitError) {
+      const message = submitError instanceof ApiError ? submitError.message : "Could not submit guess";
+      setError(message);
+    }
   }
 
   return (
@@ -22,6 +35,7 @@ export function GuessForm({ disabled = false }: GuessFormProps) {
           disabled={disabled}
         />
       </label>
+      {error ? <p className="form__error">{error}</p> : null}
       <div className="button-row button-row--compact">
         <button className="button button--primary" type="submit" disabled={disabled}>
           Submit Guess

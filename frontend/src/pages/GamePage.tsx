@@ -1,14 +1,16 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "../components/Card";
+import { DrawingCanvas } from "../components/DrawingCanvas";
 import { GuessForm } from "../components/GuessForm";
 import { ResultPanel } from "../components/ResultPanel";
 import { RoomCodeBadge } from "../components/RoomCodeBadge";
 import { Scoreboard } from "../components/Scoreboard";
-import { useRoomState } from "../state/roomStore";
+import { useRoomState, useRoomStore } from "../state/roomStore";
 
 export function GamePage() {
   const navigate = useNavigate();
+  const roomStore = useRoomStore();
   const { room, participantId } = useRoomState();
 
   useEffect(() => {
@@ -16,6 +18,15 @@ export function GamePage() {
       navigate("/", { replace: true });
     }
   }, [navigate, room]);
+
+  useEffect(() => {
+    if (!room) {
+      return undefined;
+    }
+
+    roomStore.startPolling();
+    return () => roomStore.stopPolling();
+  }, [roomStore, room?.code]);
 
   if (!room) {
     return null;
@@ -58,9 +69,7 @@ export function GamePage() {
 
         <div className="game-page__main">
           <Card title="Canvas">
-            <div className="canvas-placeholder" style={{ minHeight: '500px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-              Waiting for drawer...
-            </div>
+            <DrawingCanvas />
           </Card>
         </div>
 
