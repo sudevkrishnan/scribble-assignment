@@ -8,14 +8,23 @@
 
 **Input**: User description: "implement scenario phase 4 Result, Restart & Final Validation - Given a round has ended, When the result state is displayed and the host restarts, Then all players see the correct word, final scores, and full guess history; on restart, everyone returns to the lobby with players preserved and all round state cleared. Shared result state visible to all players, clean restart to lobby with players preserved and round state cleared"
 
+## Clarifications
+
+### Session 2026-06-17
+
+- Q: How does a round actually transition into the result state? → A:
+  Host manually triggers an explicit "End Round" action whenever they
+  choose to end it.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Shared Round Result Visible to Everyone (Priority: P1)
 
-When a round ends, every participant — drawer and guessers alike — sees the
-same result view: the correct secret word (no longer hidden), each
-participant's final score, and the complete guess history with every
-guess's literal text visible (not just the previously-redacted subset).
+When the host ends the round, every participant — drawer and guessers
+alike — sees the same result view: the correct secret word (no longer
+hidden), each participant's final score, and the complete guess history
+with every guess's literal text visible (not just the previously-redacted
+subset).
 
 **Why this priority**: The result is the payoff moment of the round — every
 participant needs a consistent, trustworthy view of what happened and how
@@ -23,32 +32,37 @@ they did. Without it, the round has no satisfying conclusion and players
 cannot verify scores or settle disputes about what was guessed.
 
 **Independent Test**: With a room that has an active round, several guesses
-(some correct, some incorrect) and a non-zero score, end the round and
-confirm every participant's client displays the same secret word, the same
-set of final scores, and the same full guess history (including the literal
-text of guesses that were previously hidden from non-submitting guessers).
+(some correct, some incorrect) and a non-zero score, have the host trigger
+"End Round" and confirm every participant's client displays the same secret
+word, the same set of final scores, and the same full guess history
+(including the literal text of guesses that were previously hidden from
+non-submitting guessers).
 
 **Acceptance Scenarios**:
 
-1. **Given** an active round ends, **When** any participant views the
-   result state, **Then** the secret word is shown in full to that
-   participant, regardless of whether they were the drawer or a guesser.
-2. **Given** an active round ends, **When** any participant views the
-   result state, **Then** every participant's final score is shown,
+1. **Given** an active round, **When** the host triggers "End Round,"
+   **Then** the room transitions to the result state and the secret word
+   is shown in full to every participant, regardless of whether they were
+   the drawer or a guesser.
+2. **Given** the host has ended the round, **When** any participant views
+   the result state, **Then** every participant's final score is shown,
    identical across every viewer's client.
-3. **Given** an active round ends with a mix of correct and incorrect
+3. **Given** the host ends a round that had a mix of correct and incorrect
    guesses from multiple guessers, **When** any participant views the
    result state, **Then** the full guess history is shown with every
    entry's literal guessed text visible to every viewer, including guesses
    that were previously redacted for non-submitting guessers during the
    active round.
-4. **Given** an active round ends, **When** participants' clients next
-   poll, **Then** every connected client transitions to the result view
-   without requiring a manual page reload or rejoin.
-5. **Given** a round has not yet ended, **When** any participant views the
-   game screen, **Then** no result state is shown and redaction rules for
-   the active round (per the prior phase's guess-history visibility rule)
-   still apply.
+4. **Given** the host triggers "End Round," **When** other participants'
+   clients next poll, **Then** every connected client transitions to the
+   result view without requiring a manual page reload or rejoin.
+5. **Given** a non-host participant attempts to trigger "End Round,"
+   **When** the request is submitted, **Then** it is rejected — only the
+   host may end the round.
+6. **Given** a round has not yet been ended, **When** any participant
+   views the game screen, **Then** no result state is shown and redaction
+   rules for the active round (per the prior phase's guess-history
+   visibility rule) still apply.
 
 ---
 
@@ -98,11 +112,10 @@ empty guess history, and all scores back at zero.
 - If a guesser disconnects (stops polling) before a round ends and
   reconnects after restart, they MUST see the lobby state, not a stale
   result or active-round view, once their client resumes polling.
-- Triggering restart when the room is still in an active round (not yet at
-  the result state) is out of scope for this phase — restart is only
-  defined as an action available from the result state; the system does
-  not need to support restarting mid-round (round-ending is covered by the
-  scope boundary in Assumptions).
+- Triggering restart while the room is still in an active round (before
+  the host has triggered "End Round") MUST be rejected — restart is only
+  valid from the result state; the system does not need to support
+  restarting mid-round.
 - If a participant is the host but the room currently has only one
   participant (the host, no guessers), the host MUST still be able to
   restart, and MUST land back in a lobby with just themselves present.
@@ -116,7 +129,11 @@ empty guess history, and all scores back at zero.
 ### Functional Requirements
 
 - **FR-001**: The system MUST recognize a distinct "result" state for a
-  room, entered when the active round ends.
+  room, entered only when the host triggers an explicit "End Round" action
+  on an active round — there is no automatic or timer-based transition.
+- **FR-001a**: The system MUST reject an "End Round" request from a
+  non-host participant, and MUST reject it when the room is not currently
+  in an active round.
 - **FR-002**: While a room is in the result state, the system MUST reveal
   the secret word, unredacted, to every participant regardless of role.
 - **FR-003**: While a room is in the result state, the system MUST show
@@ -183,17 +200,11 @@ empty guess history, and all scores back at zero.
 
 ## Assumptions
 
-- How a round transitions into the result state (e.g., a host-triggered
-  "end round" action, a timer, or all guessers having guessed correctly)
-  is governed by a separate, prior concern and is out of scope for this
-  spec; this spec assumes the room can already reach a "round ended" point
-  and focuses on what happens once it does (result visibility) and how to
-  leave it (restart). A minimal host-triggered "end round" trigger is
-  assumed to exist or be added as the mechanism that flips the room into
-  the result state, consistent with the host already being the
-  game-starting authority (per the prior phase).
-- Only the host may trigger restart, consistent with the host already being
-  the sole authority for starting the game in the prior phase.
+- Only the host may trigger "End Round" or restart, consistent with the
+  host already being the sole authority for starting the game in the prior
+  phase. No timer, countdown, or auto-detection of "every guesser solved
+  it" is introduced — per the project's explicit exclusion of timers and
+  multi-round mechanics, ending a round is always a deliberate host action.
 - "Players preserved" means the same participant records (id, name,
   host/non-host role) carry over; it does not imply preserving any
   game-specific data such as who was drawer or what they scored, both of
