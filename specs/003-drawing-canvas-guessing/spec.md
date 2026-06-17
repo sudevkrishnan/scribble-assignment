@@ -190,8 +190,11 @@ incorrect word and confirm their score is unchanged.
 - A guess that matches the secret word except for surrounding whitespace
   (e.g., `" pizza "`) MUST still be scored as correct, since trimming
   happens before comparison.
-- Rapid, closely-spaced pointer movement during a stroke MUST still produce
-  a continuous-looking line (no large gaps) on the drawer's own screen.
+- The drawer's client MUST render a line segment connecting every consecutive
+  pair of pointer-move events it receives during a stroke, with no
+  batching, throttling, or sampling that would skip a received event —
+  so the rendered line's continuity is bounded by the input device's own
+  event rate, not by an additional rendering-side gap.
 - Clearing the canvas MUST NOT affect the guess history or any scores —
   these are independent pieces of state.
 - The drawer attempting to submit a guess, and a guesser attempting to draw
@@ -261,6 +264,10 @@ incorrect word and confirm their score is unchanged.
   word and the same sequence of submitted guesses, the resulting scores MUST
   always be identical, independent of timing or request order between
   different guessers.
+- **FR-020**: For a redacted guess-history entry (per FR-018), the UI MUST
+  still display, at minimum, the submitting guesser's identity and a
+  visual indicator that the attempt was incorrect — the absence of the
+  guessed text MUST NOT be presented as a missing or broken entry.
 
 ### Key Entities
 
@@ -293,8 +300,11 @@ incorrect word and confirm their score is unchanged.
   (after trimming) result in exactly a 100-point increase for the
   submitting guesser, and 0% of non-matching guesses change any score.
 - **SC-005**: 100% of connected participants see a given canvas update,
-  guess-history entry, or score change within one polling cycle (~2s) of it
-  occurring, with no manual refresh required.
+  guess-history entry, or score change within one polling cycle of it
+  occurring, with no manual refresh required — where a polling cycle is
+  the client's configured poll interval (currently ~2s; the "~2s" figure
+  is descriptive context, not itself the pass/fail threshold — "one
+  polling cycle" is).
 - **SC-006**: Repeating an identical sequence of guesses against the same
   secret word always produces the same final scores, across 100% of
   repeated trials.
