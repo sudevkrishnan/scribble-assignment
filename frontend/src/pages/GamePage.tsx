@@ -28,11 +28,33 @@ export function GamePage() {
     return () => roomStore.stopPolling();
   }, [roomStore, room?.code]);
 
+  useEffect(() => {
+    if (room?.status === "result") {
+      navigate("/result");
+    }
+  }, [navigate, room?.status]);
+
+  useEffect(() => {
+    if (room?.status === "lobby") {
+      navigate("/lobby");
+    }
+  }, [navigate, room?.status]);
+
   if (!room) {
     return null;
   }
 
   const viewer = room.participants.find((participant) => participant.id === participantId) ?? null;
+  const isHost = Boolean(viewer?.isHost);
+
+  async function handleEndRound() {
+    try {
+      await roomStore.endRound();
+      // Navigation happens via the room.status effect above, for the host too.
+    } catch {
+      // surfaced via the shared `error` state on this page's parent flow
+    }
+  }
 
   return (
     <section className="panel game-page">
@@ -94,6 +116,11 @@ export function GamePage() {
       </div>
 
       <div className="button-row">
+        {isHost ? (
+          <button className="button button--primary" onClick={handleEndRound}>
+            End Round
+          </button>
+        ) : null}
         <button className="button button--secondary" onClick={() => navigate("/lobby")}>
           Exit Game
         </button>

@@ -144,6 +144,26 @@ export class RoomStore {
     return response.room;
   }
 
+  async endRound() {
+    if (!this.state.room || !this.state.participantId) {
+      return null;
+    }
+
+    const response = await api.endRound(this.state.room.code, this.state.participantId);
+    this.setRoomSnapshot(response.room);
+    return response.room;
+  }
+
+  async restartRoom() {
+    if (!this.state.room || !this.state.participantId) {
+      return null;
+    }
+
+    const response = await api.restartRoom(this.state.room.code, this.state.participantId);
+    this.setRoomSnapshot(response.room);
+    return response.room;
+  }
+
   /** Reattaches this tab to its last known room/participant after a reload. No-op if nothing was stored. */
   async reattach() {
     const code = getActiveRoomCode();

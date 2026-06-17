@@ -11,7 +11,9 @@ vi.mock("../services/api", async () => {
       createRoom: vi.fn(),
       joinRoom: vi.fn(),
       fetchRoom: vi.fn(),
-      startGame: vi.fn()
+      startGame: vi.fn(),
+      endRound: vi.fn(),
+      restartRoom: vi.fn()
     }
   };
 });
@@ -44,6 +46,48 @@ describe("RoomStore", () => {
     await store.joinRoom("WXYZ", "Bob");
 
     expect(getStoredIdentity("WXYZ")).toEqual({ participantId: "p2", isHost: false });
+  });
+
+  describe("endRound", () => {
+    it("calls the API and updates RoomState's room from the response", async () => {
+      vi.mocked(api.createRoom).mockResolvedValue({
+        participantId: "p1",
+        room: { code: "ABCD", status: "active", participants: [], availableWords: [], roles: [], canStart: true, strokes: [], guesses: [] }
+      });
+      vi.mocked(api.endRound).mockResolvedValue({
+        room: { code: "ABCD", status: "result", participants: [], availableWords: [], roles: [], canStart: true, strokes: [], guesses: [] }
+      });
+
+      const store = new RoomStore();
+      await store.createRoom("Alice");
+
+      const room = await store.endRound();
+
+      expect(api.endRound).toHaveBeenCalledWith("ABCD", "p1");
+      expect(room?.status).toBe("result");
+      expect(store.getSnapshot().room?.status).toBe("result");
+    });
+  });
+
+  describe("restartRoom", () => {
+    it("calls the API and updates RoomState's room from the response", async () => {
+      vi.mocked(api.createRoom).mockResolvedValue({
+        participantId: "p1",
+        room: { code: "ABCD", status: "result", participants: [], availableWords: [], roles: [], canStart: true, strokes: [], guesses: [] }
+      });
+      vi.mocked(api.restartRoom).mockResolvedValue({
+        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: true, strokes: [], guesses: [] }
+      });
+
+      const store = new RoomStore();
+      await store.createRoom("Alice");
+
+      const room = await store.restartRoom();
+
+      expect(api.restartRoom).toHaveBeenCalledWith("ABCD", "p1");
+      expect(room?.status).toBe("lobby");
+      expect(store.getSnapshot().room?.status).toBe("lobby");
+    });
   });
 
   describe("polling", () => {

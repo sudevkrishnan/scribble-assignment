@@ -31,6 +31,12 @@ export function LobbyPage() {
     }
   }, [navigate, room?.status]);
 
+  useEffect(() => {
+    if (room?.status === "result") {
+      navigate("/result");
+    }
+  }, [navigate, room?.status]);
+
   if (!room) {
     return null;
   }
