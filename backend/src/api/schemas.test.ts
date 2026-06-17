@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   clearCanvasSchema,
   createRoomSchema,
+  endRoundSchema,
   guessSchema,
   joinRoomSchema,
+  restartSchema,
   roomCodeParamsSchema,
   startGameSchema,
   strokeSchema
@@ -85,5 +87,27 @@ describe("schemas", () => {
     const result = guessSchema.parse({ participantId: "p1", text: "  pizza  " });
 
     expect(result.text).toBe("pizza");
+  });
+
+  it("endRoundSchema rejects a missing or blank participantId", () => {
+    expect(() => endRoundSchema.parse({})).toThrow();
+    expect(() => endRoundSchema.parse({ participantId: "" })).toThrow();
+  });
+
+  it("endRoundSchema accepts a valid participantId", () => {
+    const result = endRoundSchema.parse({ participantId: "p1" });
+
+    expect(result.participantId).toBe("p1");
+  });
+
+  it("restartSchema rejects a missing or blank participantId", () => {
+    expect(() => restartSchema.parse({})).toThrow();
+    expect(() => restartSchema.parse({ participantId: "" })).toThrow();
+  });
+
+  it("restartSchema accepts a valid participantId", () => {
+    const result = restartSchema.parse({ participantId: "p1" });
+
+    expect(result.participantId).toBe("p1");
   });
 });

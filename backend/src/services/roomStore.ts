@@ -243,6 +243,69 @@ export function submitGuess(code: string, participantId: string, text: string): 
   return { ok: true, room: cloneRoom(room), guess };
 }
 
+export type EndRoundFailureReason = "not_found" | "not_host" | "not_active";
+
+export type EndRoundResult =
+  | { ok: true; room: Room }
+  | { ok: false; reason: EndRoundFailureReason };
+
+export function endRound(code: string, participantId: string): EndRoundResult {
+  const room = rooms.get(code);
+
+  if (!room) {
+    return { ok: false, reason: "not_found" };
+  }
+
+  if (room.hostParticipantId !== participantId) {
+    return { ok: false, reason: "not_host" };
+  }
+
+  if (room.status !== "active") {
+    return { ok: false, reason: "not_active" };
+  }
+
+  room.status = "result";
+  room.updatedAt = now();
+  rooms.set(room.code, room);
+
+  return { ok: true, room: cloneRoom(room) };
+}
+
+export type RestartFailureReason = "not_found" | "not_host" | "not_result";
+
+export type RestartResult =
+  | { ok: true; room: Room }
+  | { ok: false; reason: RestartFailureReason };
+
+export function restartRoom(code: string, participantId: string): RestartResult {
+  const room = rooms.get(code);
+
+  if (!room) {
+    return { ok: false, reason: "not_found" };
+  }
+
+  if (room.hostParticipantId !== participantId) {
+    return { ok: false, reason: "not_host" };
+  }
+
+  if (room.status !== "result") {
+    return { ok: false, reason: "not_result" };
+  }
+
+  room.status = "lobby";
+  room.drawerParticipantId = undefined;
+  room.secretWord = undefined;
+  room.strokes = [];
+  room.guesses = [];
+  room.participants.forEach((participant) => {
+    participant.score = 0;
+  });
+  room.updatedAt = now();
+  rooms.set(room.code, room);
+
+  return { ok: true, room: cloneRoom(room) };
+}
+
 export function saveRoom(room: Room) {
   room.updatedAt = now();
   rooms.set(room.code, cloneRoom(room));
@@ -251,6 +314,7 @@ export function saveRoom(room: Room) {
 
 export function toRoomSnapshot(room: Room, viewerParticipantId?: string): RoomSnapshot {
   const viewerIsDrawer = Boolean(room.drawerParticipantId) && viewerParticipantId === room.drawerParticipantId;
+  const isResult = room.status === "result";
 
   return {
     code: room.code,
@@ -263,10 +327,10 @@ export function toRoomSnapshot(room: Room, viewerParticipantId?: string): RoomSn
     availableWords: viewerIsDrawer ? listWords() : [],
     roles: [...STARTER_ROLES],
     canStart: room.participants.length >= 2,
-    secretWord: viewerIsDrawer ? room.secretWord : undefined,
+    secretWord: viewerIsDrawer || isResult ? room.secretWord : undefined,
     strokes: room.strokes,
     guesses: room.guesses.map((guess) => {
-      const canSeeText = viewerIsDrawer || guess.participantId === viewerParticipantId || guess.correct;
+      const canSeeText = isResult || viewerIsDrawer || guess.participantId === viewerParticipantId || guess.correct;
 
       return canSeeText
         ? { id: guess.id, participantId: guess.participantId, correct: guess.correct, text: guess.text }

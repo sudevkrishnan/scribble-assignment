@@ -2,9 +2,11 @@ import { Router } from "express";
 import {
   clearCanvasSchema,
   createRoomSchema,
+  endRoundSchema,
   guessSchema,
   HttpError,
   joinRoomSchema,
+  restartSchema,
   ROOM_CODE_PATTERN,
   roomCodeParamsSchema,
   roomViewerQuerySchema,
@@ -15,8 +17,10 @@ import {
   addStroke,
   clearCanvas,
   createRoom,
+  endRound,
   getRoom,
   joinRoom,
+  restartRoom,
   startGame,
   submitGuess,
   toRoomSnapshot
@@ -39,6 +43,18 @@ const GUESS_ACTION_ERROR_BY_REASON = {
   not_guesser: { statusCode: 403, message: "The drawer cannot submit guesses" },
   not_participant: { statusCode: 403, message: "participantId is not a member of this room" },
   not_active: { statusCode: 409, message: "Round is not active" }
+} as const;
+
+const END_ROUND_ERROR_BY_REASON = {
+  not_found: { statusCode: 404, message: "Room not found" },
+  not_host: { statusCode: 403, message: "Only the host can end the round" },
+  not_active: { statusCode: 409, message: "Round is not active" }
+} as const;
+
+const RESTART_ERROR_BY_REASON = {
+  not_found: { statusCode: 404, message: "Room not found" },
+  not_host: { statusCode: 403, message: "Only the host can restart the room" },
+  not_result: { statusCode: 409, message: "Room is not in the result state" }
 } as const;
 
 export function createRoomsRouter() {
@@ -152,6 +168,44 @@ export function createRoomsRouter() {
 
       if (!result.ok) {
         const { statusCode, message } = GUESS_ACTION_ERROR_BY_REASON[result.reason];
+        throw new HttpError(statusCode, message);
+      }
+
+      response.json({
+        room: toRoomSnapshot(result.room, participantId)
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:code/end-round", (request, response, next) => {
+    try {
+      const { code } = roomCodeParamsSchema.parse(request.params);
+      const { participantId } = endRoundSchema.parse(request.body);
+      const result = endRound(code.toUpperCase(), participantId);
+
+      if (!result.ok) {
+        const { statusCode, message } = END_ROUND_ERROR_BY_REASON[result.reason];
+        throw new HttpError(statusCode, message);
+      }
+
+      response.json({
+        room: toRoomSnapshot(result.room, participantId)
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/:code/restart", (request, response, next) => {
+    try {
+      const { code } = roomCodeParamsSchema.parse(request.params);
+      const { participantId } = restartSchema.parse(request.body);
+      const result = restartRoom(code.toUpperCase(), participantId);
+
+      if (!result.ok) {
+        const { statusCode, message } = RESTART_ERROR_BY_REASON[result.reason];
         throw new HttpError(statusCode, message);
       }
 

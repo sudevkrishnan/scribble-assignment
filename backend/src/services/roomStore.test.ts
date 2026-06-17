@@ -3,8 +3,10 @@ import {
   addStroke,
   clearCanvas,
   createRoom,
+  endRound,
   getRoom,
   joinRoom,
+  restartRoom,
   selectSecretWord,
   startGame,
   submitGuess,
@@ -408,6 +410,165 @@ describe("roomStore", () => {
 
       const ownerSnapshot = toRoomSnapshot(afterCorrect, guesserId);
       expect(ownerSnapshot.guesses.find((g) => g.correct === false)?.text).toBe(wrongWord);
+    });
+  });
+
+  describe("endRound", () => {
+    it("transitions an active room to result for the host", () => {
+      const { room, hostId } = startActiveRoom();
+
+      const result = endRound(room.code, hostId);
+
+      expect(result.ok).toBe(true);
+      expect((result as { room: typeof room }).room.status).toBe("result");
+    });
+
+    it("rejects a non-host", () => {
+      const { room, guesserId } = startActiveRoom();
+
+      const result = endRound(room.code, guesserId);
+
+      expect(result).toEqual({ ok: false, reason: "not_host" });
+    });
+
+    it("rejects when the room is still lobby", () => {
+      const { room, participantId: hostId } = createRoom("Alice");
+      joinRoom(room.code, "Bob");
+
+      const result = endRound(room.code, hostId);
+
+      expect(result).toEqual({ ok: false, reason: "not_active" });
+    });
+
+    it("rejects when the room is already in result", () => {
+      const { room, hostId } = startActiveRoom();
+      endRound(room.code, hostId);
+
+      const result = endRound(room.code, hostId);
+
+      expect(result).toEqual({ ok: false, reason: "not_active" });
+    });
+
+    it("leaves strokes, guesses, and every score untouched", () => {
+      const { room, hostId, guesserId } = startActiveRoom();
+      addStroke(room.code, hostId, [{ x: 0, y: 0 }]);
+      submitGuess(room.code, guesserId, room.secretWord!);
+
+      const result = endRound(room.code, hostId);
+      const updated = (result as { room: typeof room }).room;
+
+      expect(updated.strokes).toHaveLength(1);
+      expect(updated.guesses).toHaveLength(1);
+      expect(updated.participants.find((participant) => participant.id === guesserId)?.score).toBe(100);
+    });
+  });
+
+  describe("toRoomSnapshot in the result state", () => {
+    it("reveals secretWord and every guess's text to a non-drawer, non-submitting guesser", () => {
+      const { room, hostId, guesserId } = startActiveRoom();
+      const thirdJoin = joinRoom(room.code, "Cara");
+      const otherGuesserId = thirdJoin!.participantId;
+      const wrongWord = STARTER_WORDS.find((word) => word !== room.secretWord)!;
+      submitGuess(room.code, guesserId, wrongWord);
+
+      const activeSnapshot = toRoomSnapshot(room, otherGuesserId);
+      expect(activeSnapshot.secretWord).toBeUndefined();
+      expect(activeSnapshot.guesses[0]?.text).toBeUndefined();
+
+      const ended = endRound(room.code, hostId);
+      const resultRoom = (ended as { room: typeof room }).room;
+
+      const resultSnapshot = toRoomSnapshot(resultRoom, otherGuesserId);
+      expect(resultSnapshot.secretWord).toBe(room.secretWord);
+      expect(resultSnapshot.guesses[0]?.text).toBe(wrongWord);
+    });
+
+    it("shows every participant's score, identically, across viewers", () => {
+      const { room, hostId, guesserId } = startActiveRoom();
+      submitGuess(room.code, guesserId, room.secretWord!);
+      const ended = endRound(room.code, hostId);
+      const resultRoom = (ended as { room: typeof room }).room;
+
+      const hostSnapshot = toRoomSnapshot(resultRoom, hostId);
+      const guesserSnapshot = toRoomSnapshot(resultRoom, guesserId);
+
+      expect(hostSnapshot.participants.find((p) => p.id === guesserId)?.score).toBe(100);
+      expect(guesserSnapshot.participants.find((p) => p.id === guesserId)?.score).toBe(100);
+    });
+  });
+
+  describe("restartRoom", () => {
+    function endRoundFor(room: { code: string }, hostId: string) {
+      const ended = endRound(room.code, hostId);
+      return (ended as { room: { code: string } }).room;
+    }
+
+    it("transitions result back to lobby for the host, resetting round state and preserving participants", () => {
+      const { room, hostId, guesserId } = startActiveRoom();
+      addStroke(room.code, hostId, [{ x: 0, y: 0 }]);
+      submitGuess(room.code, guesserId, room.secretWord!);
+      endRoundFor(room, hostId);
+
+      const result = restartRoom(room.code, hostId);
+      const updated = (result as { room: typeof room }).room;
+
+      expect(result.ok).toBe(true);
+      expect(updated.status).toBe("lobby");
+      expect(updated.drawerParticipantId).toBeUndefined();
+      expect(updated.secretWord).toBeUndefined();
+      expect(updated.strokes).toEqual([]);
+      expect(updated.guesses).toEqual([]);
+      expect(updated.participants.every((participant) => participant.score === 0)).toBe(true);
+      expect(updated.participants.map((participant) => participant.id)).toEqual(
+        room.participants.map((participant) => participant.id)
+      );
+      expect(updated.hostParticipantId).toBe(room.hostParticipantId);
+    });
+
+    it("rejects a non-host", () => {
+      const { room, hostId, guesserId } = startActiveRoom();
+      endRoundFor(room, hostId);
+
+      const result = restartRoom(room.code, guesserId);
+
+      expect(result).toEqual({ ok: false, reason: "not_host" });
+    });
+
+    it("rejects when the room is active (not yet ended)", () => {
+      const { room, hostId } = startActiveRoom();
+
+      const result = restartRoom(room.code, hostId);
+
+      expect(result).toEqual({ ok: false, reason: "not_result" });
+    });
+
+    it("rejects idempotently when the room is already back in lobby", () => {
+      const { room, hostId } = startActiveRoom();
+      endRoundFor(room, hostId);
+      restartRoom(room.code, hostId);
+
+      const result = restartRoom(room.code, hostId);
+
+      expect(result).toEqual({ ok: false, reason: "not_result" });
+    });
+
+    it("supports starting a fresh, independent round after restart with no residual data", () => {
+      const { room, hostId, guesserId } = startActiveRoom();
+      const firstWord = room.secretWord!;
+      submitGuess(room.code, guesserId, firstWord);
+      addStroke(room.code, hostId, [{ x: 1, y: 1 }]);
+      endRoundFor(room, hostId);
+      restartRoom(room.code, hostId);
+
+      const restarted = startGame(room.code, hostId);
+      const newRoom = (restarted as { room: typeof room }).room;
+
+      expect(newRoom.status).toBe("active");
+      expect(newRoom.drawerParticipantId).toBe(hostId);
+      expect(STARTER_WORDS).toContain(newRoom.secretWord);
+      expect(newRoom.strokes).toEqual([]);
+      expect(newRoom.guesses).toEqual([]);
+      expect(newRoom.participants.every((participant) => participant.score === 0)).toBe(true);
     });
   });
 });
