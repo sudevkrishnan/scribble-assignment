@@ -98,8 +98,8 @@ spec.md priorities — both P1).
 
 **Purpose**: Final end-to-end validation
 
-- [ ] T028 Walk through `specs/005-result-restart/quickstart.md` end-to-end across three browser tabs (host/drawer + two guessers): result reveal (including the previously-redacted entry becoming visible to every viewer) and restart (roster preserved, all round state cleared, a second round completes independently) both match `contracts/rooms-api.md` and the spec
-- [ ] T029 Run `npm run build && npm test` in both `backend/` and `frontend/` and confirm all green
+- [X] T028 Walk through `specs/005-result-restart/quickstart.md` end-to-end across three browser tabs (host/drawer + two guessers): result reveal (including the previously-redacted entry becoming visible to every viewer) and restart (roster preserved, all round state cleared, a second round completes independently) both match `contracts/rooms-api.md` and the spec. **Verified via curl against a live `npm run dev` instance** for every backend contract scenario (redacted-then-revealed guess text/secretWord on End Round, host-only End Round/Restart gating with 403/409, full state reset plus a fresh independent second round after Restart) — all matched exactly. **Not done**: the actual three-browser-tab visual walkthrough (clicking "End Round"/"Restart" buttons, observing the `/result` and `/lobby` page transitions live) — recommend the user verify this manually in a browser, since browser navigation/UI can't be driven from this environment (same limitation noted in phase 3's quickstart)
+- [X] T029 Run `npm run build && npm test` in both `backend/` and `frontend/` and confirm all green — 95 backend tests / 27 frontend tests, all passing
 
 ---
 
