@@ -8,6 +8,7 @@ import {
   type PropsWithChildren
 } from "react";
 import { api, type RoomSessionResponse, type RoomSnapshot } from "../services/api";
+import { clearStoredIdentity, getActiveRoomCode, getStoredIdentity, setStoredIdentity } from "./roomIdentity";
 
 export interface RoomState {
   room: RoomSnapshot | null;
@@ -18,7 +19,7 @@ export interface RoomState {
 
 type Listener = () => void;
 
-class RoomStore {
+export class RoomStore {
   private state: RoomState = {
     room: null,
     participantId: null,
@@ -80,12 +81,14 @@ class RoomStore {
   async createRoom(playerName: string) {
     const response = await this.withLoading(() => api.createRoom(playerName));
     this.setRoomSession(response);
+    setStoredIdentity(response.room.code, { participantId: response.participantId, isHost: true });
     return response;
   }
 
   async joinRoom(code: string, playerName: string) {
     const response = await this.withLoading(() => api.joinRoom(code, playerName));
     this.setRoomSession(response);
+    setStoredIdentity(response.room.code, { participantId: response.participantId, isHost: false });
     return response;
   }
 
@@ -97,6 +100,66 @@ class RoomStore {
     const response = await api.fetchRoom(this.state.room.code, this.state.participantId ?? undefined);
     this.setRoomSnapshot(response.room);
     return response.room;
+  }
+
+  async startGame() {
+    if (!this.state.room || !this.state.participantId) {
+      return null;
+    }
+
+    return this.withLoading(async () => {
+      const response = await api.startGame(this.state.room!.code, this.state.participantId!);
+      this.setRoomSnapshot(response.room);
+      return response.room;
+    });
+  }
+
+  /** Reattaches this tab to its last known room/participant after a reload. No-op if nothing was stored. */
+  async reattach() {
+    const code = getActiveRoomCode();
+
+    if (!code) {
+      return null;
+    }
+
+    const identity = getStoredIdentity(code);
+
+    if (!identity) {
+      return null;
+    }
+
+    try {
+      const response = await api.fetchRoom(code, identity.participantId);
+      this.setState({ room: response.room, participantId: identity.participantId, error: null });
+      return response.room;
+    } catch {
+      clearStoredIdentity(code);
+      this.setState({
+        room: null,
+        participantId: null,
+        error: "That room could not be found. Please create or join a room again."
+      });
+      return null;
+    }
+  }
+
+  private pollHandle: ReturnType<typeof setInterval> | null = null;
+
+  startPolling(intervalMs = 2000) {
+    if (this.pollHandle) {
+      return;
+    }
+
+    this.pollHandle = setInterval(() => {
+      this.fetchRoom().catch(() => undefined);
+    }, intervalMs);
+  }
+
+  stopPolling() {
+    if (this.pollHandle) {
+      clearInterval(this.pollHandle);
+      this.pollHandle = null;
+    }
   }
 }
 

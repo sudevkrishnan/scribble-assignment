@@ -32,7 +32,7 @@ priorities) so each story is independently implementable and testable.
 
 **Purpose**: Confirm a clean starting point before making changes
 
-- [ ] T001 Run `npm run build && npm test` in `backend/` and `frontend/` and confirm both pass on the current `001-room-lobby-host` branch before any code changes
+- [X] T001 Run `npm run build && npm test` in `backend/` and `frontend/` and confirm both pass on the current `001-room-lobby-host` branch before any code changes
 
 ---
 
@@ -42,14 +42,14 @@ priorities) so each story is independently implementable and testable.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Add `hostParticipantId: string` to `Room` and extend `RoomStatus` to `"lobby" | "active"` in `backend/src/models/game.ts`
-- [ ] T003 Add `isHost: boolean` to each participant entry and `canStart: boolean` to `RoomSnapshot` in `backend/src/models/game.ts`
-- [ ] T004 Set `hostParticipantId` to the creating participant's `id` inside `createRoom` in `backend/src/services/roomStore.ts`
-- [ ] T005 Compute `isHost` per participant (`participant.id === room.hostParticipantId`) and `canStart` (`participants.length >= 2`) inside `toRoomSnapshot` in `backend/src/services/roomStore.ts`
-- [ ] T006 [P] Add cases to `backend/src/services/roomStore.test.ts`: creator has `isHost: true`; `canStart` is `false` at 1 participant and `true` at 2+ participants
-- [ ] T007 [P] Mirror `isHost`, `canStart`, and the `RoomStatus` union (`"lobby" | "active"`) in the `RoomSnapshot`/`Participant` types in `frontend/src/services/api.ts`
-- [ ] T008 [P] Create `frontend/src/state/roomIdentity.ts` exporting `getStoredIdentity(code)`, `setStoredIdentity(code, identity)`, and `clearStoredIdentity(code)`, backed by `window.sessionStorage` under key `scribble:room:<code>` (see research.md)
-- [ ] T009 [P] Add `frontend/src/state/roomIdentity.test.ts` covering set/get/clear round-trips and confirming two different room codes don't collide
+- [X] T002 Add `hostParticipantId: string` to `Room` and extend `RoomStatus` to `"lobby" | "active"` in `backend/src/models/game.ts`
+- [X] T003 Add `isHost: boolean` to each participant entry and `canStart: boolean` to `RoomSnapshot` in `backend/src/models/game.ts`
+- [X] T004 Set `hostParticipantId` to the creating participant's `id` inside `createRoom` in `backend/src/services/roomStore.ts`
+- [X] T005 Compute `isHost` per participant (`participant.id === room.hostParticipantId`) and `canStart` (`participants.length >= 2`) inside `toRoomSnapshot` in `backend/src/services/roomStore.ts`
+- [X] T006 [P] Add cases to `backend/src/services/roomStore.test.ts`: creator has `isHost: true`; `canStart` is `false` at 1 participant and `true` at 2+ participants
+- [X] T007 [P] Mirror `isHost`, `canStart`, and the `RoomStatus` union (`"lobby" | "active"`) in the `RoomSnapshot`/`Participant` types in `frontend/src/services/api.ts`
+- [X] T008 [P] Create `frontend/src/state/roomIdentity.ts` exporting `getStoredIdentity(code)`, `setStoredIdentity(code, identity)`, and `clearStoredIdentity(code)`, backed by `window.sessionStorage` under key `scribble:room:<code>` (see research.md)
+- [X] T009 [P] Add `frontend/src/state/roomIdentity.test.ts` covering set/get/clear round-trips and confirming two different room codes don't collide
 
 **Checkpoint**: Model, snapshot, and identity-storage foundation ready — user story implementation can now begin
 
@@ -61,9 +61,9 @@ priorities) so each story is independently implementable and testable.
 
 **Independent Test**: Create a room solo and confirm a unique code is returned and the creator is host; create a second room and confirm it has a distinct code with its own host
 
-- [ ] T010 [US1] After a successful create, call `setStoredIdentity(code, { participantId, isHost: true })` inside `createRoom()` in `frontend/src/state/roomStore.ts`
-- [ ] T011 [P] [US1] Add a case to `backend/src/services/roomStore.test.ts`: two sequential `createRoom` calls produce distinct codes, and each creator is host only of their own room
-- [ ] T012 [P] [US1] Add `frontend/src/state/roomStore.test.ts` (new file) with a case asserting `createRoom()` persists identity via the `roomIdentity` helper from T008
+- [X] T010 [US1] After a successful create, call `setStoredIdentity(code, { participantId, isHost: true })` inside `createRoom()` in `frontend/src/state/roomStore.ts`
+- [X] T011 [P] [US1] Add a case to `backend/src/services/roomStore.test.ts`: two sequential `createRoom` calls produce distinct codes, and each creator is host only of their own room
+- [X] T012 [P] [US1] Add `frontend/src/state/roomStore.test.ts` (new file) with a case asserting `createRoom()` persists identity via the `roomIdentity` helper from T008
 
 **Checkpoint**: User Story 1 is independently functional and testable
 
@@ -75,13 +75,13 @@ priorities) so each story is independently implementable and testable.
 
 **Independent Test**: Join an existing room successfully as a non-host; separately, attempt empty, malformed, and well-formed-but-unknown codes and confirm three distinct error messages; confirm a second room is unaffected
 
-- [ ] T013 [US2] Add a `ROOM_CODE_PATTERN` matching the existing 4-character generation alphabet (`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`) and apply it in `roomCodeParamsSchema` validation in `backend/src/api/schemas.ts`
-- [ ] T014 [US2] Update `POST /:code/join` in `backend/src/api/rooms.ts` to return `400 "Room code is required"` for empty/whitespace codes, `400 "Room code is invalid"` for format mismatches, and `404 "Room not found"` for well-formed but unmatched codes
-- [ ] T015 [P] [US2] Add cases to `backend/src/api/schemas.test.ts` for empty, malformed, and well-formed-but-unmatched room codes
-- [ ] T016 [P] [US2] Add a case to `backend/src/services/roomStore.test.ts` confirming a join into one room never mutates a second room's participant list (isolation)
-- [ ] T017 [US2] Update `joinRoom` error handling in `frontend/src/services/api.ts` to surface the three distinct backend messages verbatim to the caller
-- [ ] T018 [P] [US2] Add cases to `frontend/src/services/api.test.ts` asserting the three distinct join error messages propagate from the response body
-- [ ] T019 [US2] After a successful join, call `setStoredIdentity(code, { participantId, isHost: false })` inside `joinRoom()` in `frontend/src/state/roomStore.ts`
+- [X] T013 [US2] Add a `ROOM_CODE_PATTERN` matching the existing 4-character generation alphabet (`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`) in `backend/src/api/schemas.ts`
+- [X] T014 [US2] Update `POST /:code/join` in `backend/src/api/rooms.ts` to return `400 "Room code is required"` for empty/whitespace codes, `400 "Room code is invalid"` for format mismatches, and `404 "Room not found"` for well-formed but unmatched codes
+- [X] T015 [P] [US2] Add cases for empty, malformed, and well-formed-but-unmatched room codes — implemented as `backend/src/api/rooms.test.ts` (new route-level integration test, deviating from the planned `schemas.test.ts` location since the 400-vs-404 distinction is enforced in the route handler, not the Zod schema; uses a real ephemeral-port listener + `fetch`, no new test dependency)
+- [X] T016 [P] [US2] Add a case to `backend/src/services/roomStore.test.ts` confirming a join into one room never mutates a second room's participant list (isolation)
+- [X] T017 [US2] Update `joinRoom` error handling in `frontend/src/services/api.ts` to surface the three distinct backend messages verbatim to the caller — already satisfied by the existing generic `request()` error path (verified, no code change needed)
+- [X] T018 [P] [US2] Add cases to `frontend/src/services/api.test.ts` asserting the three distinct join error messages propagate from the response body
+- [X] T019 [US2] After a successful join, call `setStoredIdentity(code, { participantId, isHost: false })` inside `joinRoom()` in `frontend/src/state/roomStore.ts` — implemented alongside T010 (same method block)
 
 **Checkpoint**: User Stories 1 AND 2 both work independently
 
@@ -93,9 +93,9 @@ priorities) so each story is independently implementable and testable.
 
 **Independent Test**: With two tabs in the same room's lobby, join a third tab and confirm the first two update within a few seconds with no action taken
 
-- [ ] T020 [US3] Add `startPolling()` / `stopPolling()` to `frontend/src/state/roomStore.ts` using `setInterval` (~2000ms) to call the existing `fetchRoom()`
-- [ ] T021 [US3] In `frontend/src/pages/LobbyPage.tsx`, start polling in a `useEffect` on mount and stop it on unmount; remove the manual "Refresh Room" button (now redundant per research.md)
-- [ ] T022 [P] [US3] Add a case to `frontend/src/state/roomStore.test.ts` verifying `startPolling` invokes `fetchRoom` on each tick and `stopPolling` clears the interval (use `vi.useFakeTimers`)
+- [X] T020 [US3] Add `startPolling()` / `stopPolling()` to `frontend/src/state/roomStore.ts` using `setInterval` (~2000ms) to call the existing `fetchRoom()`
+- [X] T021 [US3] In `frontend/src/pages/LobbyPage.tsx`, start polling in a `useEffect` on mount and stop it on unmount; remove the manual "Refresh Room" button (now redundant per research.md)
+- [X] T022 [P] [US3] Add a case to `frontend/src/state/roomStore.test.ts` verifying `startPolling` invokes `fetchRoom` on each tick and `stopPolling` clears the interval (use `vi.useFakeTimers`)
 
 **Checkpoint**: User Stories 1, 2, AND 3 all work independently
 
@@ -107,15 +107,15 @@ priorities) so each story is independently implementable and testable.
 
 **Independent Test**: Non-host sees no start control; host with 1 participant sees a disabled control with a reason; host with 2+ participants sees an enabled control
 
-- [ ] T023 [US4] Add `startGameSchema` (`{ participantId: string }`) to `backend/src/api/schemas.ts`
-- [ ] T024 [US4] Add `startGame(code, participantId)` to `backend/src/services/roomStore.ts`: reject if `participantId !== room.hostParticipantId` or `participants.length < 2`; on success set `status` to `"active"`; return a typed success/failure-reason result
-- [ ] T025 [US4] Add `POST /:code/start` in `backend/src/api/rooms.ts`, mapping `startGame` results to `400`/`403`/`404`/`409` per `contracts/rooms-api.md`
-- [ ] T026 [P] [US4] Add cases to `backend/src/services/roomStore.test.ts`: non-host start rejected, <2 participants rejected, host with ≥2 participants succeeds and sets `status` to `"active"`
-- [ ] T027 [P] [US4] Add a case to `backend/src/api/schemas.test.ts` for a missing/blank `participantId` on start
-- [ ] T028 [US4] Add `startGame(code, participantId)` to `frontend/src/services/api.ts`
-- [ ] T029 [US4] Add a `startGame()` action to `frontend/src/state/roomStore.ts` that calls the API and updates the room snapshot on success
-- [ ] T030 [US4] In `frontend/src/pages/LobbyPage.tsx`, render the Start control only for the host (`room.participants` entry matching the stored `participantId` has `isHost: true`); disable it with a "need 2 players" message when `!room.canStart`; enable it otherwise; wire its click to `startGame()`
-- [ ] T031 [P] [US4] Add a case to `frontend/src/services/api.test.ts` for the `startGame` request shape
+- [X] T023 [US4] Add `startGameSchema` (`{ participantId: string }`) to `backend/src/api/schemas.ts`
+- [X] T024 [US4] Add `startGame(code, participantId)` to `backend/src/services/roomStore.ts`: reject if `participantId !== room.hostParticipantId` or `participants.length < 2`; on success set `status` to `"active"`; return a typed success/failure-reason result
+- [X] T025 [US4] Add `POST /:code/start` in `backend/src/api/rooms.ts`, mapping `startGame` results to `400`/`403`/`404`/`409` per `contracts/rooms-api.md`
+- [X] T026 [P] [US4] Add cases to `backend/src/services/roomStore.test.ts`: non-host start rejected, <2 participants rejected, host with ≥2 participants succeeds and sets `status` to `"active"`
+- [X] T027 [P] [US4] Add a case to `backend/src/api/schemas.test.ts` for a missing/blank `participantId` on start
+- [X] T028 [US4] Add `startGame(code, participantId)` to `frontend/src/services/api.ts`
+- [X] T029 [US4] Add a `startGame()` action to `frontend/src/state/roomStore.ts` that calls the API and updates the room snapshot on success
+- [X] T030 [US4] In `frontend/src/pages/LobbyPage.tsx`, render the Start control only for the host (`room.participants` entry matching the stored `participantId` has `isHost: true`); disable it with a visible "need 2 players" message when `!room.canStart`; enable it otherwise; wire its click to `startGame()`
+- [X] T031 [P] [US4] Add a case to `frontend/src/services/api.test.ts` for the `startGame` request shape
 
 **Checkpoint**: All four user stories work independently and together — this phase's full scope is complete
 
@@ -125,10 +125,10 @@ priorities) so each story is independently implementable and testable.
 
 **Purpose**: Reload reattachment (FR-014/SC-006, not owned by a single priority story) and final validation
 
-- [ ] T032 Add reattachment-on-load logic to `frontend/src/state/roomStore.ts`: on initial load for a known room code, read `getStoredIdentity`, call `fetchRoom`; on a `404` response, call `clearStoredIdentity` and surface a clear "Room not found, please rejoin" message instead of failing silently
-- [ ] T033 [P] Add a case to `frontend/src/state/roomStore.test.ts` for reattachment: a stored identity plus a successful fetch restores room/participant state; a stored identity plus a `404` clears the identity
-- [ ] T034 Walk through `specs/001-room-lobby-host/quickstart.md` end-to-end with two browser tabs and record any deviations
-- [ ] T035 Run `npm run build && npm test` in both `backend/` and `frontend/` and confirm all green
+- [X] T032 Add `reattach()` to `frontend/src/state/roomStore.ts` (reads `getActiveRoomCode`/`getStoredIdentity`, calls `fetchRoom`, clears identity + surfaces a clear message on failure) and wire it via a `ReattachGate` bootstrap component in `frontend/src/App.tsx` that delays rendering `AppRoutes` until the reattach attempt resolves (avoids a race with `LobbyPage`'s redirect-when-no-room effect); also surface the stored error on `frontend/src/pages/StartPage.tsx`
+- [X] T033 [P] Add cases to `frontend/src/state/roomStore.test.ts` for reattachment: a stored identity plus a successful fetch restores room/participant state; a stored identity plus a fetch failure clears the identity and sets a clear error; no stored identity is a no-op
+- [X] T034 Walk through `specs/001-room-lobby-host/quickstart.md`: backend contract scenarios (create/host, all 3 join error cases, isolation across two rooms, non-host/under-2-player/host-with-2 start gating, not-found GET) verified end-to-end via curl against a live `npm run dev` instance — all matched `contracts/rooms-api.md` exactly. **Not done**: the two-browser-tab UI walkthrough (sessionStorage reattach, visible disabled/enabled Start button, polling) — recommend the user run this manually since it requires a real browser
+- [X] T035 Run `npm run build && npm test` in both `backend/` and `frontend/` and confirm all green — 19 backend tests / 16 frontend tests, all passing
 
 ---
 

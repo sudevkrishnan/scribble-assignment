@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import { Card } from "../components/Card";
 import { PageHeader } from "../components/PageHeader";
+import { useRoomState } from "../state/roomStore";
 
 export function StartPage() {
+  const { error } = useRoomState();
+
   return (
     <section className="panel hero">
       <div className="start-hero__content" style={{ paddingBottom: '16px' }}>
@@ -11,6 +14,8 @@ export function StartPage() {
           title="Scribble Game"
           description="Create a new room to play with friends or join an existing game using a room code. Take turns drawing and guessing words in real-time."
         />
+
+        {error ? <p className="form__error">{error}</p> : null}
 
         <div className="button-row button-row--hero">
           <Link className="button button--primary" to="/create-room">

@@ -1,0 +1,113 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { api } from "../services/api";
+import { getStoredIdentity, setStoredIdentity } from "./roomIdentity";
+import { RoomStore } from "./roomStore";
+
+vi.mock("../services/api", () => ({
+  api: {
+    createRoom: vi.fn(),
+    joinRoom: vi.fn(),
+    fetchRoom: vi.fn(),
+    startGame: vi.fn()
+  }
+}));
+
+describe("RoomStore", () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it("createRoom persists the creator's identity as host", async () => {
+    vi.mocked(api.createRoom).mockResolvedValue({
+      participantId: "p1",
+      room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+    });
+
+    const store = new RoomStore();
+    await store.createRoom("Alice");
+
+    expect(getStoredIdentity("ABCD")).toEqual({ participantId: "p1", isHost: true });
+  });
+
+  it("joinRoom persists the joiner's identity as non-host", async () => {
+    vi.mocked(api.joinRoom).mockResolvedValue({
+      participantId: "p2",
+      room: { code: "WXYZ", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+    });
+
+    const store = new RoomStore();
+    await store.joinRoom("WXYZ", "Bob");
+
+    expect(getStoredIdentity("WXYZ")).toEqual({ participantId: "p2", isHost: false });
+  });
+
+  describe("polling", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("startPolling calls fetchRoom on each tick and stopPolling clears it", async () => {
+      vi.mocked(api.createRoom).mockResolvedValue({
+        participantId: "p1",
+        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+      });
+      vi.mocked(api.fetchRoom).mockResolvedValue({
+        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+      });
+
+      const store = new RoomStore();
+      await store.createRoom("Alice");
+
+      store.startPolling(2000);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(api.fetchRoom).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(api.fetchRoom).toHaveBeenCalledTimes(2);
+
+      store.stopPolling();
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(api.fetchRoom).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("reattach", () => {
+    it("restores room/participant state from a stored identity plus a successful fetch", async () => {
+      setStoredIdentity("ABCD", { participantId: "p1", isHost: true });
+      vi.mocked(api.fetchRoom).mockResolvedValue({
+        room: { code: "ABCD", status: "lobby", participants: [], availableWords: [], roles: [], canStart: false }
+      });
+
+      const store = new RoomStore();
+      const room = await store.reattach();
+
+      expect(room?.code).toBe("ABCD");
+      expect(store.getSnapshot().participantId).toBe("p1");
+    });
+
+    it("clears the stored identity and surfaces an error when the room is no longer found", async () => {
+      setStoredIdentity("ABCD", { participantId: "p1", isHost: true });
+      vi.mocked(api.fetchRoom).mockRejectedValue(new Error("Unable to load room"));
+
+      const store = new RoomStore();
+      await store.reattach();
+
+      expect(getStoredIdentity("ABCD")).toBeNull();
+      expect(store.getSnapshot().room).toBeNull();
+      expect(store.getSnapshot().error).toMatch(/could not be found/i);
+    });
+
+    it("is a no-op when nothing was stored", async () => {
+      const store = new RoomStore();
+      const room = await store.reattach();
+
+      expect(room).toBeNull();
+      expect(api.fetchRoom).not.toHaveBeenCalled();
+    });
+  });
+});

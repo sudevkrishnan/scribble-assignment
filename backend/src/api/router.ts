@@ -30,7 +30,8 @@ export function errorHandler(
   _next: NextFunction
 ) {
   if (error.name === "ZodError") {
-    response.status(400).json({ message: "Invalid request payload" });
+    const zodIssue = (error as unknown as { issues?: { message: string }[] }).issues?.[0];
+    response.status(400).json({ message: zodIssue?.message ?? "Invalid request payload" });
     return;
   }
 
