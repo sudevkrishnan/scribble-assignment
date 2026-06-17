@@ -212,3 +212,11 @@ empty guess history, and all scores back at zero.
 - The result state and restart both rely on the existing polling mechanism
   already used for strokes/guesses sync — no new real-time transport is
   introduced.
+- "Restart" (a deliberate, host-triggered return to the lobby, after which
+  the host may manually start an entirely new, independent game) is
+  distinct from the project's excluded "multiple rounds" / "drawer
+  rotation" — those terms refer to automatic round progression *within a
+  single continuous game* (e.g. auto-advancing to a next drawer/word
+  without returning to the lobby), which this feature does not introduce.
+  Restart-then-replay through the lobby is this lab's explicit Scenario 4
+  deliverable (per the project README), not the prohibited mechanic.
