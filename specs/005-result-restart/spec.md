@@ -123,6 +123,11 @@ empty guess history, and all scores back at zero.
   after the room is already back in the lobby does not error or corrupt
   state — it MUST simply be rejected as a no-op (room is not in the
   result state).
+- A drawing, clear-canvas, or guess-submission attempt made after the host
+  has triggered "End Round" MUST be rejected, reusing the same
+  "round is not active" rejection already required for those actions by
+  the prior phase — the result state does not reopen any active-round
+  action.
 
 ## Requirements *(mandatory)*
 
@@ -158,7 +163,10 @@ empty guess history, and all scores back at zero.
   restart).
 - **FR-010**: On a successful restart, the system MUST clear all
   round-specific state: drawer assignment, secret word, canvas strokes,
-  guess history, and every participant's score (reset to 0).
+  guess history, and every participant's score (reset to 0). This reset
+  MUST be applied as a single atomic state transition — no participant's
+  poll may observe a partially-reset room (e.g., scores cleared but
+  strokes not yet cleared, or vice versa).
 - **FR-011**: The system MUST propagate the restart-to-lobby transition to
   every connected participant's client via the existing polling mechanism,
   with no manual action required to observe it.
@@ -166,6 +174,11 @@ empty guess history, and all scores back at zero.
   drawer-assignment and secret-word-selection rules as the original game
   start, producing a fully independent new round with no residual data
   from the previous round.
+- **FR-013**: The "End Round" control MUST be hidden or visibly disabled
+  for any non-host viewer, and the "Restart" control MUST be hidden or
+  visibly disabled for any non-host viewer, mirroring the prior phase's
+  requirement that role-restricted controls be visually distinguished per
+  role (not just rejected server-side).
 
 ### Key Entities
 
