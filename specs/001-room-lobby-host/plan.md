@@ -79,28 +79,40 @@ backend/
 │   │   │                      #         isRoomCodeFormatValid() helper
 │   │   └── roomStore.test.ts  # MODIFY: add cases for host assignment, start gating
 │   ├── api/
-│   │   ├── schemas.ts         # MODIFY: roomCodeParamsSchema enforces code format;
-│   │   │                      #         add startGameSchema (participantId in body)
-│   │   ├── schemas.test.ts    # MODIFY: add format-validation cases
+│   │   ├── schemas.ts         # MODIFY: ROOM_CODE_PATTERN, startGameSchema
+│   │   ├── schemas.test.ts    # MODIFY: format-validation + start-schema cases
 │   │   ├── rooms.ts           # MODIFY: join returns distinct 400 (invalid format)
 │   │   │                      #         vs 404 (not found); add POST /:code/start
-│   │   └── router.ts          # (no change expected; verify error mapping)
+│   │   ├── rooms.test.ts      # NEW: route-level integration tests (real listener +
+│   │   │                      #      fetch) for join's 3 distinct error cases
+│   │   └── router.ts          # MODIFY: surface specific Zod issue message instead
+│   │                          #         of a generic "Invalid request payload"
 │   └── seed/starterData.ts    # (no change)
 └── tests/                      # (none beyond existing co-located *.test.ts)
 
 frontend/
 ├── src/
 │   ├── state/
-│   │   └── roomStore.ts       # MODIFY: read/write sessionStorage for identity,
-│   │                          #         add startPolling()/stopPolling(), startGame()
+│   │   ├── roomStore.ts        # MODIFY: read/write sessionStorage for identity,
+│   │   │                       #         startPolling()/stopPolling(), startGame(),
+│   │   │                       #         reattach()
+│   │   ├── roomStore.test.ts   # NEW: state-layer tests (identity persistence,
+│   │   │                       #      polling, reattach)
+│   │   ├── roomIdentity.ts     # NEW: sessionStorage helper (per-room identity +
+│   │   │                       #      activeRoomCode pointer)
+│   │   └── roomIdentity.test.ts # NEW: helper unit tests
 │   ├── services/
-│   │   ├── api.ts             # MODIFY: add startGame(code, participantId); surface
-│   │   │                      #         distinct error messages from response body
-│   │   └── api.test.ts        # MODIFY: add startGame test, error-message cases
-│   └── pages/
-│       └── LobbyPage.tsx      # MODIFY: auto-poll on mount/unmount, host-gated
-│                               #         Start button (disabled + reason, or hidden
-│                               #         for non-host), remove manual Refresh button
+│   │   ├── api.ts             # MODIFY: add startGame(); ApiError class carrying
+│   │   │                      #         HTTP status, so callers can distinguish
+│   │   │                      #         404 from transient failures
+│   │   └── api.test.ts        # MODIFY: startGame test, error-message cases
+│   ├── pages/
+│   │   ├── LobbyPage.tsx      # MODIFY: auto-poll on mount/unmount, host-gated
+│   │   │                      #         Start button (disabled + reason, or hidden
+│   │   │                      #         for non-host), remove manual Refresh button
+│   │   └── StartPage.tsx      # MODIFY: surface stale-identity error from reattach()
+│   └── App.tsx                 # MODIFY: ReattachGate bootstrap component delays
+│                                #         rendering AppRoutes until reattach() resolves
 └── tests/                      # (none beyond existing co-located *.test.ts)
 ```
 

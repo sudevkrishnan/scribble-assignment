@@ -7,7 +7,10 @@ implementation-level decisions needed to execute the plan.
 ## Decision: Client identity storage mechanism
 
 **Decision**: Use `window.sessionStorage`, keyed per room code, to persist
-`{ participantId, isHost }` for the current tab.
+`{ participantId, isHost }` for the current tab, plus a second fixed key
+(`scribble:activeRoomCode`) storing just the current room's code — needed so
+reattachment-on-load knows which per-code record to look up before it has a
+code to work with (see data-model.md).
 
 **Rationale**: FR-014 requires reload reattachment without server-side
 persistence. The lab's own verification method (README "Quick Verification"

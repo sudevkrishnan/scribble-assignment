@@ -7,7 +7,7 @@ import {
   useSyncExternalStore,
   type PropsWithChildren
 } from "react";
-import { api, type RoomSessionResponse, type RoomSnapshot } from "../services/api";
+import { ApiError, api, type RoomSessionResponse, type RoomSnapshot } from "../services/api";
 import { clearStoredIdentity, getActiveRoomCode, getStoredIdentity, setStoredIdentity } from "./roomIdentity";
 
 export interface RoomState {
@@ -132,13 +132,24 @@ export class RoomStore {
       const response = await api.fetchRoom(code, identity.participantId);
       this.setState({ room: response.room, participantId: identity.participantId, error: null });
       return response.room;
-    } catch {
-      clearStoredIdentity(code);
-      this.setState({
-        room: null,
-        participantId: null,
-        error: "That room could not be found. Please create or join a room again."
-      });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        // The room genuinely no longer exists (e.g. the backend restarted) — the stored
+        // identity is stale, so clear it rather than retrying it on a future reload.
+        clearStoredIdentity(code);
+        this.setState({
+          room: null,
+          participantId: null,
+          error: "That room could not be found. Please create or join a room again."
+        });
+      } else {
+        // Transient failure (network blip, server error) — keep the stored identity so a
+        // later retry can still reattach, matching the polling behavior of not clearing
+        // last-known state on a transient error.
+        this.setState({
+          error: "Could not reach the server. Please check your connection and try again."
+        });
+      }
       return null;
     }
   }

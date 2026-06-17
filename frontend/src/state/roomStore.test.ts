@@ -1,16 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { api } from "../services/api";
+import { ApiError, api } from "../services/api";
 import { getStoredIdentity, setStoredIdentity } from "./roomIdentity";
 import { RoomStore } from "./roomStore";
 
-vi.mock("../services/api", () => ({
-  api: {
-    createRoom: vi.fn(),
-    joinRoom: vi.fn(),
-    fetchRoom: vi.fn(),
-    startGame: vi.fn()
-  }
-}));
+vi.mock("../services/api", async () => {
+  const actual = await vi.importActual<typeof import("../services/api")>("../services/api");
+  return {
+    ApiError: actual.ApiError,
+    api: {
+      createRoom: vi.fn(),
+      joinRoom: vi.fn(),
+      fetchRoom: vi.fn(),
+      startGame: vi.fn()
+    }
+  };
+});
 
 describe("RoomStore", () => {
   beforeEach(() => {
@@ -90,9 +94,9 @@ describe("RoomStore", () => {
       expect(store.getSnapshot().participantId).toBe("p1");
     });
 
-    it("clears the stored identity and surfaces an error when the room is no longer found", async () => {
+    it("clears the stored identity and surfaces an error on a real 404 (room no longer exists)", async () => {
       setStoredIdentity("ABCD", { participantId: "p1", isHost: true });
-      vi.mocked(api.fetchRoom).mockRejectedValue(new Error("Unable to load room"));
+      vi.mocked(api.fetchRoom).mockRejectedValue(new ApiError(404, "Unable to load room"));
 
       const store = new RoomStore();
       await store.reattach();
@@ -100,6 +104,17 @@ describe("RoomStore", () => {
       expect(getStoredIdentity("ABCD")).toBeNull();
       expect(store.getSnapshot().room).toBeNull();
       expect(store.getSnapshot().error).toMatch(/could not be found/i);
+    });
+
+    it("keeps the stored identity and surfaces a retry-style error on a transient failure", async () => {
+      setStoredIdentity("ABCD", { participantId: "p1", isHost: true });
+      vi.mocked(api.fetchRoom).mockRejectedValue(new TypeError("Failed to fetch"));
+
+      const store = new RoomStore();
+      await store.reattach();
+
+      expect(getStoredIdentity("ABCD")).toEqual({ participantId: "p1", isHost: true });
+      expect(store.getSnapshot().error).toMatch(/could not reach the server/i);
     });
 
     it("is a no-op when nothing was stored", async () => {

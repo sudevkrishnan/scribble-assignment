@@ -40,9 +40,17 @@ Stored under key `scribble:room:<code>`, value:
 { "participantId": "uuid", "isHost": true }
 ```
 
-Written on successful create/join; read on app load to attempt reattachment
-(FR-014); cleared when a `404` (not-found) response is received for that
-code, per the spec's stale-identity edge case.
+Written on successful create/join; cleared when a `404` (not-found) response
+is received for that code, per the spec's stale-identity edge case. A
+transient failure (network blip, 5xx) does NOT clear it — it's kept so a
+later retry can still reattach, matching the polling edge case's "don't
+clear last-known state on a transient error" behavior.
+
+A second key, `scribble:activeRoomCode`, stores just the room code this tab
+last created/joined (no other value). Reattachment on load needs to know
+*which* room's identity to look up before it has a code to work with — this
+key supplies that, and is written/cleared alongside the identity record
+above for the same code.
 
 ## State Transitions
 
