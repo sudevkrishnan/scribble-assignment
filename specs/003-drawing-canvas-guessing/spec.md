@@ -8,6 +8,20 @@
 
 **Input**: User description: "Given a round is active with a drawer and guessers (all scores start at 0), When the drawer draws/clears the canvas and guessers submit their guesses, Then the drawing is visible on the drawer's screen; guesses are trimmed, case-insensitively compared, and empty ones rejected; the guess history is synced to all players via polling; correct guesses score 100 (incorrect add 0). Interactive drawing canvas, clear canvas, guess submission with validation, synced guess history via polling, deterministic scoring."
 
+## Clarifications
+
+### Session 2026-06-17
+
+- Q: The guess history (FR-010, FR-017) records and syncs "what they
+  guessed" to everyone — should the literal guessed text always be visible
+  to other guessers, even though that would reveal the secret word to
+  everyone the instant anyone solves it? → A: Show the literal guessed text
+  to everyone only once that guess is marked correct (the word is revealed
+  at that point anyway); incorrect guesses remain visible to other
+  guessers only as an attempt (guesser name + incorrect marker), with the
+  attempted text hidden from anyone other than the guesser who submitted it
+  and the drawer.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Drawer Draws on an Interactive Canvas (Priority: P1)
@@ -89,7 +103,7 @@ leading/trailing whitespace and confirm it is trimmed before being recorded.
    guesses.
 4. **Given** an active round, **When** a guesser submits a non-empty,
    valid guess, **Then** a new entry is added to the guess history
-   recording who guessed and what they guessed.
+   recording who guessed, what they guessed, and whether it was correct.
 
 ---
 
@@ -102,19 +116,33 @@ of submitted guesses, kept up to date via polling.
 makes this a group game rather than isolated private guesses; it must land
 alongside guess submission to make User Story 3 observable and useful.
 
-**Independent Test**: With two guessers in the same room, have one submit a
-guess; within one polling cycle, confirm it appears in the guess history on
-the drawer's screen and the other guesser's screen.
+**Independent Test**: With two guessers in the same room, have one submit an
+incorrect guess and confirm the other guesser's history shows only the
+guesser's name and an incorrect marker (not the guessed text); have the
+same guesser then submit the correct word and confirm the other guesser's
+history now shows the literal guessed text for that entry.
 
 **Acceptance Scenarios**:
 
-1. **Given** a guesser submits a valid guess, **When** any other
-   participant's client next polls, **Then** that guess appears in their
-   guess history view, in submission order.
-2. **Given** multiple guesses have been submitted by different guessers,
+1. **Given** a guesser submits a valid, incorrect guess, **When** any
+   other guesser's client next polls, **Then** that entry appears in
+   their guess history attributed to the submitting guesser and marked
+   incorrect, but without the guessed text.
+2. **Given** a guesser submits a valid, correct guess, **When** any other
+   participant's client next polls, **Then** that entry appears in their
+   guess history showing the literal guessed text, attributed to the
+   submitting guesser and marked correct.
+3. **Given** a guesser submits any valid guess, **When** that same
+   guesser's client next polls, **Then** their own history entry always
+   shows their own literal guessed text, correct or not.
+4. **Given** a guesser submits any valid guess, **When** the drawer's
+   client next polls, **Then** the drawer's history view always shows the
+   literal guessed text, correct or not.
+5. **Given** multiple guesses have been submitted by different guessers,
    **When** any participant views the guess history, **Then** every
-   submitted guess is shown, each attributed to the guesser who made it.
-3. **Given** a guess was rejected for being empty, **When** any
+   submitted guess is shown in submission order, each attributed to the
+   guesser who made it, subject to the text-visibility rule above.
+6. **Given** a guess was rejected for being empty, **When** any
    participant views the guess history, **Then** that rejected attempt
    does not appear in the history.
 
@@ -169,6 +197,11 @@ incorrect word and confirm their score is unchanged.
 - The drawer attempting to submit a guess, and a guesser attempting to draw
   or clear the canvas, MUST both be rejected — the two roles' actions are
   mutually exclusive.
+- Once a guesser's guess is marked correct and its text revealed to
+  everyone, any of that guesser's later guesses in the same round still
+  follow the same per-guess visibility rule (e.g., a later incorrect guess
+  is still hidden from other guessers) — revealing one entry's text does
+  not change the visibility rule applied to other entries.
 - A guesser polling mid-stroke MUST see the canvas only on its next poll,
   not as a live, persistent connection — out-of-date-by-up-to-one-poll-cycle
   display is expected and acceptable.
@@ -199,7 +232,7 @@ incorrect word and confirm their score is unchanged.
   guessers may submit guesses.
 - **FR-010**: System MUST record each accepted (non-empty, trimmed) guess in
   a guess history, attributed to the submitting guesser, in submission
-  order.
+  order, along with whether it was scored correct.
 - **FR-011**: System MUST compare an accepted guess to the round's secret
   word case-insensitively after trimming both sides.
 - **FR-012**: System MUST award exactly 100 points to a guesser's score when
@@ -218,7 +251,13 @@ incorrect word and confirm their score is unchanged.
 - **FR-017**: System MUST make the current guess history and every
   participant's current score available to every participant's client via
   polling.
-- **FR-018**: System MUST keep scoring deterministic — given the same secret
+- **FR-018**: System MUST include the literal guessed text in a guess
+  history entry sent to a given participant's client only when that
+  participant is the drawer, the guesser who submitted that entry, or the
+  entry was scored correct; for any other participant viewing an incorrect
+  entry that isn't their own, the entry MUST include only the submitting
+  guesser's identity and the incorrect marker, never the guessed text.
+- **FR-019**: System MUST keep scoring deterministic — given the same secret
   word and the same sequence of submitted guesses, the resulting scores MUST
   always be identical, independent of timing or request order between
   different guessers.
@@ -230,7 +269,11 @@ incorrect word and confirm their score is unchanged.
   all strokes drawn since the last clear.
 - **Guess**: A single submission by a guesser — the trimmed text, the
   submitting participant, and whether it was scored correct — appended to
-  the round's guess history in submission order.
+  the round's guess history in submission order. The guessed text is
+  visible to the drawer and to the submitting guesser unconditionally, and
+  to every other participant only once the entry is marked correct;
+  incorrect entries shown to other guessers carry the guesser's identity
+  and the incorrect marker without the text.
 - **Score** *(extends Participant from prior phases)*: A non-negative
   integer per participant, starting at 0 when the round becomes active and
   incremented by 100 for each of that participant's own correct guesses.
@@ -272,6 +315,8 @@ incorrect word and confirm their score is unchanged.
 - There is no limit on how many guesses a single guesser may submit,
   including after guessing correctly (FR-014); the lab's scope excludes any
   "game over" or "round complete" condition in this phase.
-- Unlike the prior phase's secret word, none of this phase's data (canvas
-  strokes, guess history, scores) is secret — it is visible to every
-  participant, drawer and guessers alike.
+- Canvas strokes and scores carry no secrecy and are visible to every
+  participant unconditionally; only the literal text of an incorrect guess
+  is restricted (per the Clarifications session), continuing the prior
+  phase's principle of not letting one participant's view leak the answer
+  to others before they've earned it.
