@@ -191,7 +191,7 @@ export function clearCanvas(code: string, participantId: string): DrawingActionR
   return { ok: true, room: cloneRoom(room) };
 }
 
-export type GuessActionFailureReason = "not_found" | "not_guesser" | "not_active";
+export type GuessActionFailureReason = "not_found" | "not_guesser" | "not_active" | "not_participant";
 
 export type GuessActionResult =
   | { ok: true; room: Room; guess: GuessEntry }
@@ -210,6 +210,10 @@ export function submitGuess(code: string, participantId: string, text: string): 
 
   if (room.drawerParticipantId === participantId) {
     return { ok: false, reason: "not_guesser" };
+  }
+
+  if (!room.participants.some((participant) => participant.id === participantId)) {
+    return { ok: false, reason: "not_participant" };
   }
 
   const trimmed = text.trim();

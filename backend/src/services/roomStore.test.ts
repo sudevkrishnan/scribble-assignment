@@ -3,6 +3,7 @@ import {
   addStroke,
   clearCanvas,
   createRoom,
+  getRoom,
   joinRoom,
   selectSecretWord,
   startGame,
@@ -298,6 +299,16 @@ describe("roomStore", () => {
       expect(result.ok).toBe(false);
       expect((result as { reason: string }).reason).toBe("not_active");
       void hostId;
+    });
+
+    it("rejects a participantId that does not belong to any current room participant", () => {
+      const { room } = startActiveRoom();
+
+      const result = submitGuess(room.code, "not-a-real-participant-id", "anything");
+
+      expect(result.ok).toBe(false);
+      expect((result as { reason: string }).reason).toBe("not_participant");
+      expect(getRoom(room.code)?.guesses).toHaveLength(0);
     });
 
     it("increases the guesser's score by exactly 100 on a correct guess and leaves it unchanged on an incorrect one", () => {

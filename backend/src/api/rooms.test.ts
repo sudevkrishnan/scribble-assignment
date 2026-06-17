@@ -322,6 +322,20 @@ describe("rooms router", () => {
       expect(body.message).toBe("Room not found");
     });
 
+    it("returns 403 for a participantId that isn't a member of the room", async () => {
+      const { code } = await startActiveRoom();
+
+      const response = await fetch(`${baseUrl}/rooms/${code}/guesses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantId: "not-a-real-participant-id", text: "anything" })
+      });
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body.message).toBe("participantId is not a member of this room");
+    });
+
     it("returns differently-redacted guesses arrays for different viewers", async () => {
       const { code, hostId, guesserId, secretWord } = await startActiveRoom();
       const joinResponse = await fetch(`${baseUrl}/rooms/${code}/join`, {

@@ -53,6 +53,10 @@ participant's `score` by `100`.
   `participantId` missing: `{ "message": "Guess is required" }` /
   Zod-derived message.
 - `403` — caller is the room's drawer: `{ "message": "The drawer cannot submit guesses" }`.
+- `403` — caller's `participantId` does not match any current participant
+  of the room: `{ "message": "participantId is not a member of this room" }`
+  (FR-009a — prevents a guess being recorded/scored against an identity
+  that never joined the room).
 - `404` — room not found: `{ "message": "Room not found" }`.
 - `409` — room is not `active`: `{ "message": "Round is not active" }`.
 

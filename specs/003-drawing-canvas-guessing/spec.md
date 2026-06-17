@@ -48,6 +48,10 @@ visible lag or missing segments.
 3. **Given** a non-drawer (guesser) views the game screen, **When** they
    attempt to draw on the canvas, **Then** no stroke is drawn — drawing
    input is accepted only from the drawer.
+4. **Given** an active round with an assigned drawer, **When** the drawer
+   presses down and immediately lifts the pointer without moving it,
+   **Then** a single-point stroke (a dot) is recorded and rendered — this
+   counts as a valid, complete stroke, not a discarded or invalid input.
 
 ---
 
@@ -200,6 +204,13 @@ incorrect word and confirm their score is unchanged.
 - The drawer attempting to submit a guess, and a guesser attempting to draw
   or clear the canvas, MUST both be rejected — the two roles' actions are
   mutually exclusive.
+- All drawer-only and guesser-only role checks (FR-004, FR-005, FR-009)
+  MUST be enforced independent of what the requester's UI does or does not
+  render — a non-drawer attempting a draw/clear action through any
+  non-UI path (e.g., a direct request) MUST still be rejected, mirroring
+  the prior phase's "non-UI path" guarantee for secret-word redaction; the
+  restriction is enforced by what the server accepts, not by hiding
+  controls in the UI only.
 - Once a guesser's guess is marked correct and its text revealed to
   everyone, any of that guesser's later guesses in the same round still
   follow the same per-guess visibility rule (e.g., a later incorrect guess
@@ -220,10 +231,19 @@ incorrect word and confirm their score is unchanged.
   screen immediately as they draw, without waiting for any round trip.
 - **FR-003**: System MUST treat a pointer lift followed by a new pointer-down
   as the start of a new, visually separate stroke.
+- **FR-003a**: System MUST accept a stroke with as few as one point (a dot,
+  per the User Story 1 dot scenario) and MUST reject a stroke submission
+  with zero points as malformed input.
 - **FR-004**: System MUST reject drawing input from any non-drawer
   participant.
 - **FR-005**: System MUST allow the drawer, and only the drawer, to trigger
   a clear action that removes all strokes from the active round's canvas.
+- **FR-005a**: System MUST make the clear control and the guess submission
+  control unusable (hidden, or visibly disabled) for the role that
+  FR-004/FR-005/FR-009 would reject from using them (drawer-only for
+  clear, guesser-only for guess submission) — a participant MUST NOT be
+  able to interact with a control for an action the system would reject
+  from them.
 - **FR-006**: System MUST NOT allow a clear action to affect the guess
   history or any participant's score.
 - **FR-007**: System MUST trim leading/trailing whitespace from a submitted
@@ -233,6 +253,10 @@ incorrect word and confirm their score is unchanged.
   or affect any score.
 - **FR-009**: System MUST reject a guess submission from the drawer; only
   guessers may submit guesses.
+- **FR-009a**: System MUST reject a guess submission whose submitting
+  participant does not match a current participant of that room — a
+  guess MUST NOT be recorded, attributed, or scored against an identity
+  that isn't an actual member of the room.
 - **FR-010**: System MUST record each accepted (non-empty, trimmed) guess in
   a guess history, attributed to the submitting guesser, in submission
   order, along with whether it was scored correct.
@@ -272,8 +296,8 @@ incorrect word and confirm their score is unchanged.
 ### Key Entities
 
 - **Stroke**: A single continuous pointer-drag drawing action, represented
-  as an ordered sequence of points; the canvas is the ordered collection of
-  all strokes drawn since the last clear.
+  as an ordered sequence of one or more points (per FR-003a); the canvas
+  is the ordered collection of all strokes drawn since the last clear.
 - **Guess**: A single submission by a guesser — the trimmed text, the
   submitting participant, and whether it was scored correct — appended to
   the round's guess history in submission order. The guessed text is

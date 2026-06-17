@@ -37,6 +37,7 @@ const DRAWING_ACTION_ERROR_BY_REASON = {
 const GUESS_ACTION_ERROR_BY_REASON = {
   not_found: { statusCode: 404, message: "Room not found" },
   not_guesser: { statusCode: 403, message: "The drawer cannot submit guesses" },
+  not_participant: { statusCode: 403, message: "participantId is not a member of this room" },
   not_active: { statusCode: 409, message: "Round is not active" }
 } as const;
 
