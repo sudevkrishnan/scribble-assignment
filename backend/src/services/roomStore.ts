@@ -29,14 +29,10 @@ function generateUniqueCode() {
   return code;
 }
 
-function displayName(name?: string) {
-  return name || "Player";
-}
-
-function createParticipant(name?: string): Participant {
+function createParticipant(name: string): Participant {
   return {
     id: randomUUID(),
-    name: displayName(name),
+    name,
     joinedAt: now()
   };
 }
@@ -49,7 +45,19 @@ export function listWords() {
   return [...STARTER_WORDS];
 }
 
-export function createRoom(playerName?: string) {
+/** Pure, deterministic: same code always selects the same word. No RNG, no time input. */
+export function selectSecretWord(code: string): string {
+  let hash = 0;
+
+  for (let index = 0; index < code.length; index += 1) {
+    hash = (hash * 31 + code.charCodeAt(index)) | 0;
+  }
+
+  const words = listWords();
+  return words[Math.abs(hash) % words.length];
+}
+
+export function createRoom(playerName: string) {
   const participant = createParticipant(playerName);
   const room: Room = {
     code: generateUniqueCode(),
@@ -68,7 +76,7 @@ export function createRoom(playerName?: string) {
   };
 }
 
-export function joinRoom(code: string, playerName?: string) {
+export function joinRoom(code: string, playerName: string) {
   const room = rooms.get(code);
 
   if (!room) {
@@ -112,6 +120,11 @@ export function startGame(code: string, participantId: string): StartGameResult 
     return { ok: false, reason: "not_enough_players" };
   }
 
+  if (!room.drawerParticipantId) {
+    room.drawerParticipantId = room.hostParticipantId;
+    room.secretWord = selectSecretWord(room.code);
+  }
+
   room.status = "active";
   room.updatedAt = now();
   rooms.set(room.code, room);
@@ -126,17 +139,19 @@ export function saveRoom(room: Room) {
 }
 
 export function toRoomSnapshot(room: Room, viewerParticipantId?: string): RoomSnapshot {
-  void viewerParticipantId;
+  const viewerIsDrawer = Boolean(room.drawerParticipantId) && viewerParticipantId === room.drawerParticipantId;
 
   return {
     code: room.code,
     status: room.status,
     participants: room.participants.map((participant) => ({
       ...participant,
-      isHost: participant.id === room.hostParticipantId
+      isHost: participant.id === room.hostParticipantId,
+      isDrawer: participant.id === room.drawerParticipantId
     })),
-    availableWords: listWords(),
+    availableWords: viewerIsDrawer ? listWords() : [],
     roles: [...STARTER_ROLES],
-    canStart: room.participants.length >= 2
+    canStart: room.participants.length >= 2,
+    secretWord: viewerIsDrawer ? room.secretWord : undefined
   };
 }

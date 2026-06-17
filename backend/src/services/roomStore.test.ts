@@ -1,7 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { createRoom, joinRoom, startGame, toRoomSnapshot } from "./roomStore.js";
+import { createRoom, joinRoom, selectSecretWord, startGame, toRoomSnapshot } from "./roomStore.js";
+import { STARTER_WORDS } from "../seed/starterData.js";
 
 describe("roomStore", () => {
+  describe("selectSecretWord", () => {
+    it("always returns one of the starter words", () => {
+      expect(STARTER_WORDS).toContain(selectSecretWord("ABCD"));
+      expect(STARTER_WORDS).toContain(selectSecretWord("ZZZZ"));
+      expect(STARTER_WORDS).toContain(selectSecretWord("AB3D"));
+    });
+
+    it("returns the same word for the same code every time", () => {
+      const first = selectSecretWord("AB3D");
+      const second = selectSecretWord("AB3D");
+      const third = selectSecretWord("AB3D");
+
+      expect(first).toBe(second);
+      expect(second).toBe(third);
+    });
+  });
+
   it("createRoom returns a room with a 4-character uppercase code", () => {
     const result = createRoom("Alice");
 
@@ -94,6 +112,67 @@ describe("roomStore", () => {
 
       expect(result.ok).toBe(false);
       expect((result as { reason: string }).reason).toBe("not_found");
+    });
+
+    it("assigns the host as drawer and a starter word as secretWord on success", () => {
+      const { room, participantId } = createRoom("Alice");
+      joinRoom(room.code, "Bob");
+
+      const result = startGame(room.code, participantId);
+
+      expect(result.ok).toBe(true);
+      const startedRoom = (result as { room: { drawerParticipantId?: string; secretWord?: string } }).room;
+      expect(startedRoom.drawerParticipantId).toBe(participantId);
+      expect(STARTER_WORDS).toContain(startedRoom.secretWord);
+    });
+
+    it("does not reassign drawer or secretWord on a repeated start", () => {
+      const { room, participantId } = createRoom("Alice");
+      joinRoom(room.code, "Bob");
+
+      const first = startGame(room.code, participantId);
+      const second = startGame(room.code, participantId);
+
+      const firstRoom = (first as { room: { drawerParticipantId?: string; secretWord?: string } }).room;
+      const secondRoom = (second as { room: { drawerParticipantId?: string; secretWord?: string } }).room;
+      expect(secondRoom.drawerParticipantId).toBe(firstRoom.drawerParticipantId);
+      expect(secondRoom.secretWord).toBe(firstRoom.secretWord);
+    });
+  });
+
+  describe("toRoomSnapshot redaction", () => {
+    it("includes secretWord and the full word list only for the drawer", () => {
+      const { room, participantId: hostId } = createRoom("Alice");
+      const joined = joinRoom(room.code, "Bob");
+      const started = startGame(room.code, hostId);
+      const startedRoom = (started as { room: typeof room }).room;
+
+      const drawerSnapshot = toRoomSnapshot(startedRoom, hostId);
+      expect(drawerSnapshot.secretWord).toBeDefined();
+      expect(drawerSnapshot.availableWords).toEqual([...STARTER_WORDS]);
+
+      const guesserSnapshot = toRoomSnapshot(startedRoom, joined!.participantId);
+      expect(guesserSnapshot.secretWord).toBeUndefined();
+      expect(guesserSnapshot.availableWords).toEqual([]);
+    });
+
+    it("includes isDrawer per participant, true only for the drawer", () => {
+      const { room, participantId: hostId } = createRoom("Alice");
+      const joined = joinRoom(room.code, "Bob");
+      const started = startGame(room.code, hostId);
+      const startedRoom = (started as { room: typeof room }).room;
+
+      const snapshot = toRoomSnapshot(startedRoom, hostId);
+      expect(snapshot.participants.find((p) => p.id === hostId)?.isDrawer).toBe(true);
+      expect(snapshot.participants.find((p) => p.id === joined!.participantId)?.isDrawer).toBe(false);
+    });
+
+    it("has no secretWord and an empty word list for anyone before the round starts", () => {
+      const { room, participantId: hostId } = createRoom("Alice");
+
+      const snapshot = toRoomSnapshot(room, hostId);
+      expect(snapshot.secretWord).toBeUndefined();
+      expect(snapshot.availableWords).toEqual([]);
     });
   });
 });

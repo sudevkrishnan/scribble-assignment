@@ -35,6 +35,23 @@ export function GamePage() {
 
       <div className="game-page__layout">
         <aside className="game-page__sidebar game-page__sidebar--left">
+          <Card title="Players">
+            <ul className="player-list">
+              {room.participants.map((participant) => (
+                <li key={participant.id}>
+                  <span>{participant.name}</span>
+                  <span className="player-list__meta">
+                    {participant.isDrawer ? "Drawer" : "Guesser"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+          {room.secretWord ? (
+            <Card title="Secret Word">
+              <p className="status-line">{room.secretWord}</p>
+            </Card>
+          ) : null}
           <Scoreboard />
           <ResultPanel />
         </aside>
@@ -55,8 +72,8 @@ export function GamePage() {
                 <dd>{viewer?.name ?? "Unknown player"}</dd>
               </div>
               <div>
-                <dt>Status</dt>
-                <dd>Playing</dd>
+                <dt>Role</dt>
+                <dd>{viewer?.isDrawer ? "Drawer" : "Guesser"}</dd>
               </div>
             </dl>
           </Card>

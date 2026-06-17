@@ -12,12 +12,15 @@ export interface Room {
   status: RoomStatus;
   participants: Participant[];
   hostParticipantId: string;
+  drawerParticipantId?: string;
+  secretWord?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface RoomSnapshotParticipant extends Participant {
   isHost: boolean;
+  isDrawer: boolean;
 }
 
 export interface RoomSnapshot {
@@ -27,6 +30,7 @@ export interface RoomSnapshot {
   availableWords: string[];
   roles: ParticipantRole[];
   canStart: boolean;
+  secretWord?: string;
 }
 
 export interface RoomSessionResponse {

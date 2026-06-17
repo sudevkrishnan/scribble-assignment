@@ -32,7 +32,7 @@ transition).
 
 **Purpose**: Confirm a clean starting point before making changes
 
-- [ ] T001 Run `npm run build && npm test` in `backend/` and `frontend/` and confirm both pass on the current `002-drawer-word-assignment` branch before any code changes
+- [X] T001 Run `npm run build && npm test` in `backend/` and `frontend/` and confirm both pass on the current `002-drawer-word-assignment` branch before any code changes
 
 ---
 
@@ -42,11 +42,11 @@ transition).
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Add `drawerParticipantId?: string` and `secretWord?: string` to `Room` in `backend/src/models/game.ts`
-- [ ] T003 Add `isDrawer: boolean` to `RoomSnapshotParticipant` and `secretWord?: string` to `RoomSnapshot` in `backend/src/models/game.ts`
-- [ ] T004 [P] Add a pure `selectSecretWord(code: string): string` hash helper in `backend/src/services/roomStore.ts`, implementing the polynomial rolling hash from research.md (no RNG, no time input)
-- [ ] T005 [P] Add cases to `backend/src/services/roomStore.test.ts` for `selectSecretWord`: always returns one of the 5 starter words; the same code always returns the same word across repeated calls
-- [ ] T006 [P] Mirror `isDrawer` on `Participant` and `secretWord?: string` on `RoomSnapshot` in `frontend/src/services/api.ts`
+- [X] T002 Add `drawerParticipantId?: string` and `secretWord?: string` to `Room` in `backend/src/models/game.ts`
+- [X] T003 Add `isDrawer: boolean` to `RoomSnapshotParticipant` and `secretWord?: string` to `RoomSnapshot` in `backend/src/models/game.ts`
+- [X] T004 [P] Add a pure `selectSecretWord(code: string): string` hash helper in `backend/src/services/roomStore.ts`, implementing the polynomial rolling hash from research.md (no RNG, no time input)
+- [X] T005 [P] Add cases to `backend/src/services/roomStore.test.ts` for `selectSecretWord`: always returns one of the 5 starter words; the same code always returns the same word across repeated calls
+- [X] T006 [P] Mirror `isDrawer` on `Participant` and `secretWord?: string` on `RoomSnapshot` in `frontend/src/services/api.ts`
 
 **Checkpoint**: Model/type foundation and the word-selection function ready — user story implementation can now begin
 
@@ -58,10 +58,10 @@ transition).
 
 **Independent Test**: Submit empty and whitespace-only names on both Create Room and Join Room; confirm rejection with a clear message and no room/participant created. Submit a padded name; confirm it's trimmed and accepted.
 
-- [ ] T007 [US1] Change `playerName` in `createRoomSchema` and `joinRoomSchema` to `z.string().trim().min(1, "Player name is required")` (drop `.optional()`) in `backend/src/api/schemas.ts`
-- [ ] T008 [US1] Remove the `displayName()` fallback in `backend/src/services/roomStore.ts`; `createParticipant` now receives an already-validated, trimmed, non-empty name
-- [ ] T009 [P] [US1] Add cases to `backend/src/api/schemas.test.ts`: blank/whitespace `playerName` rejected for both schemas with the message "Player name is required"; a padded name (e.g., `"  Alice  "`) is trimmed to `"Alice"`
-- [ ] T010 [P] [US1] Add cases to `backend/src/api/rooms.test.ts`: `POST /rooms` and `POST /:code/join` with a blank/whitespace `playerName` return `400` with message "Player name is required"
+- [X] T007 [US1] Change `playerName` in `createRoomSchema` and `joinRoomSchema` to `z.string().trim().min(1, "Player name is required")` (drop `.optional()`) in `backend/src/api/schemas.ts`
+- [X] T008 [US1] Remove the `displayName()` fallback in `backend/src/services/roomStore.ts`; `createParticipant` now receives an already-validated, trimmed, non-empty name
+- [X] T009 [P] [US1] Add cases to `backend/src/api/schemas.test.ts`: blank/whitespace `playerName` rejected for both schemas with the message "Player name is required"; a padded name (e.g., `"  Alice  "`) is trimmed to `"Alice"`
+- [X] T010 [P] [US1] Add cases to `backend/src/api/rooms.test.ts`: `POST /rooms` and `POST /:code/join` with a blank/whitespace `playerName` return `400` with message "Player name is required"
 
 **Checkpoint**: User Story 1 is independently functional and testable
 
@@ -73,10 +73,10 @@ transition).
 
 **Independent Test**: With a host and a guesser, start the game and confirm every connected participant's snapshot shows the host's `isDrawer: true` and the guesser's `isDrawer: false`; confirm the guesser is automatically navigated to the game screen without manual action.
 
-- [ ] T011 [US2] In `startGame()` in `backend/src/services/roomStore.ts`, assign `room.drawerParticipantId = room.hostParticipantId` the first time a room transitions to active, guarded by `if (!room.drawerParticipantId)` (per research.md's idempotency decision)
-- [ ] T012 [US2] Compute `isDrawer` per participant (`participant.id === room.drawerParticipantId`) in `toRoomSnapshot()` in `backend/src/services/roomStore.ts`
-- [ ] T013 [P] [US2] Add cases to `backend/src/services/roomStore.test.ts`: after a successful start, the host's snapshot entry has `isDrawer: true` and every other participant's has `isDrawer: false`; repeating `startGame()` on an already-active room does not change `drawerParticipantId`
-- [ ] T014 [US2] Add a `useEffect` to `frontend/src/pages/LobbyPage.tsx` that watches `room.status` and calls `navigate("/game")` for every participant (not only the host, who already navigates explicitly in `handleStart()`) once it becomes `"active"` — closes the coverage gap found by `/speckit-analyze` (FR-012, SC-006; see research.md's "How non-host participants reach the game screen" decision). Verified manually via `quickstart.md` scenario 2, not an automated test (see research.md's testing note on why).
+- [X] T011 [US2] In `startGame()` in `backend/src/services/roomStore.ts`, assign `room.drawerParticipantId = room.hostParticipantId` the first time a room transitions to active, guarded by `if (!room.drawerParticipantId)` (per research.md's idempotency decision)
+- [X] T012 [US2] Compute `isDrawer` per participant (`participant.id === room.drawerParticipantId`) in `toRoomSnapshot()` in `backend/src/services/roomStore.ts`
+- [X] T013 [P] [US2] Add cases to `backend/src/services/roomStore.test.ts`: after a successful start, the host's snapshot entry has `isDrawer: true` and every other participant's has `isDrawer: false`; repeating `startGame()` on an already-active room does not change `drawerParticipantId`
+- [X] T014 [US2] Add a `useEffect` to `frontend/src/pages/LobbyPage.tsx` that watches `room.status` and calls `navigate("/game")` for every participant (not only the host, who already navigates explicitly in `handleStart()`) once it becomes `"active"` — closes the coverage gap found by `/speckit-analyze` (FR-012, SC-006; see research.md's "How non-host participants reach the game screen" decision). Verified manually via `quickstart.md` scenario 2, not an automated test (see research.md's testing note on why). Simplified `handleStart()` to drop its own redundant `navigate()` call since the new effect now covers the host too.
 
 **Checkpoint**: User Story 2 is independently functional and testable — including for non-host participants
 
@@ -88,8 +88,8 @@ transition).
 
 **Independent Test**: Start a room's game and note the secret word; re-fetch the room as the drawer and confirm the same word; confirm repeating the start action doesn't change it.
 
-- [ ] T015 [US3] In `startGame()` in `backend/src/services/roomStore.ts`, assign `room.secretWord = selectSecretWord(room.code)` the first time a room transitions to active, using the same guard as T011
-- [ ] T016 [P] [US3] Add cases to `backend/src/services/roomStore.test.ts`: after a successful start, `room.secretWord` is one of the 5 starter words; repeating `startGame()` on an already-active room does not change `secretWord`
+- [X] T015 [US3] In `startGame()` in `backend/src/services/roomStore.ts`, assign `room.secretWord = selectSecretWord(room.code)` the first time a room transitions to active, using the same guard as T011
+- [X] T016 [P] [US3] Add cases to `backend/src/services/roomStore.test.ts`: after a successful start, `room.secretWord` is one of the 5 starter words; repeating `startGame()` on an already-active room does not change `secretWord`
 
 **Checkpoint**: User Stories 1, 2, AND 3 all work independently
 
@@ -101,11 +101,11 @@ transition).
 
 **Independent Test**: With a round started, fetch the room as the drawer (secret word + full word list present) and as a guesser (neither present, `secretWord` key absent, `availableWords` empty) — verify via both the UI and the raw response body.
 
-- [ ] T017 [US4] In `toRoomSnapshot()` in `backend/src/services/roomStore.ts`, set `secretWord` only when `viewerParticipantId === room.drawerParticipantId` (omitted otherwise via `undefined`), and set `availableWords` to the full starter list only for the drawer, an empty array otherwise (including before the round starts, when there is no drawer yet)
-- [ ] T018 [P] [US4] Add cases to `backend/src/services/roomStore.test.ts`: drawer's snapshot includes `secretWord` and the full `availableWords`; a non-drawer's snapshot has no `secretWord` key and an empty `availableWords`; a pre-start snapshot has neither for any viewer
-- [ ] T019 [P] [US4] Add a route-level case to `backend/src/api/rooms.test.ts`: `GET /rooms/:code?participantId=<drawer>` includes `secretWord`; the same room fetched with a different `participantId` does not
-- [ ] T020 [US4] Update `frontend/src/pages/GamePage.tsx` to label the drawer for every viewer (via each participant's `isDrawer`) and to display the secret word only when `room.secretWord` is present in the fetched snapshot
-- [ ] T021 [P] [US4] Add a case to `frontend/src/services/api.test.ts` reflecting the new `isDrawer`/`secretWord` fields in a `fetchRoom` response shape
+- [X] T017 [US4] In `toRoomSnapshot()` in `backend/src/services/roomStore.ts`, set `secretWord` only when `viewerParticipantId === room.drawerParticipantId` (omitted otherwise via `undefined`), and set `availableWords` to the full starter list only for the drawer, an empty array otherwise (including before the round starts, when there is no drawer yet)
+- [X] T018 [P] [US4] Add cases to `backend/src/services/roomStore.test.ts`: drawer's snapshot includes `secretWord` and the full `availableWords`; a non-drawer's snapshot has no `secretWord` key and an empty `availableWords`; a pre-start snapshot has neither for any viewer
+- [X] T019 [P] [US4] Add a route-level case to `backend/src/api/rooms.test.ts`: `GET /rooms/:code?participantId=<drawer>` includes `secretWord`; the same room fetched with a different `participantId` does not
+- [X] T020 [US4] Update `frontend/src/pages/GamePage.tsx` to label the drawer for every viewer (via each participant's `isDrawer`) and to display the secret word only when `room.secretWord` is present in the fetched snapshot
+- [X] T021 [P] [US4] Add a case to `frontend/src/services/api.test.ts` reflecting the new `isDrawer`/`secretWord` fields in a `fetchRoom` response shape
 
 **Checkpoint**: All four user stories work independently and together — this phase's full scope is complete
 
@@ -115,8 +115,8 @@ transition).
 
 **Purpose**: Final end-to-end validation
 
-- [ ] T022 Walk through `specs/002-drawer-word-assignment/quickstart.md` end-to-end with two browser tabs and record any deviations (including scenario 2's auto-navigation step)
-- [ ] T023 Run `npm run build && npm test` in both `backend/` and `frontend/` and confirm all green
+- [X] T022 Walk through `specs/002-drawer-word-assignment/quickstart.md`: backend contract scenarios (blank-name rejection + trimming on create/join, drawer/word assignment on start, drawer-only redaction via GET, determinism + idempotency across repeated starts/fetches) verified end-to-end via curl against a live `npm run dev` instance — all matched `contracts/rooms-api.md` and the spec exactly. **Not done**: the two-browser-tab UI walkthrough (auto-navigation of the guesser to /game without manual action — the T014 fix — and the visual drawer label/secret word display) — recommend the user run this manually since it requires a real browser, especially to confirm the C1 fix actually works visually
+- [X] T023 Run `npm run build && npm test` in both `backend/` and `frontend/` and confirm all green — 35 backend tests / 18 frontend tests, all passing
 
 ---
 

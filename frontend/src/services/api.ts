@@ -6,6 +6,7 @@ export interface Participant {
   name: string;
   joinedAt: string;
   isHost: boolean;
+  isDrawer: boolean;
 }
 
 export interface RoomSnapshot {
@@ -15,6 +16,7 @@ export interface RoomSnapshot {
   availableWords: string[];
   roles: ParticipantRole[];
   canStart: boolean;
+  secretWord?: string;
 }
 
 export interface RoomSessionResponse {

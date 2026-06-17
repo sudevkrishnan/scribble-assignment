@@ -81,4 +81,32 @@ describe("api service", () => {
       })
     );
   });
+
+  it("fetchRoom returns isDrawer per participant and secretWord when present", async () => {
+    const mockResponse = {
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          room: {
+            code: "ABCD",
+            status: "active",
+            participants: [
+              { id: "p1", name: "Alice", joinedAt: "now", isHost: true, isDrawer: true },
+              { id: "p2", name: "Bob", joinedAt: "now", isHost: false, isDrawer: false },
+            ],
+            availableWords: ["rocket"],
+            roles: ["drawer", "guesser"],
+            canStart: true,
+            secretWord: "rocket",
+          },
+        }),
+    };
+    vi.mocked(fetch).mockResolvedValue(mockResponse as unknown as Response);
+
+    const result = await api.fetchRoom("ABCD", "p1");
+
+    expect(result.room.participants[0].isDrawer).toBe(true);
+    expect(result.room.participants[1].isDrawer).toBe(false);
+    expect(result.room.secretWord).toBe("rocket");
+  });
 });

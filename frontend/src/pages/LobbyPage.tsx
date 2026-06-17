@@ -25,6 +25,12 @@ export function LobbyPage() {
     return () => roomStore.stopPolling();
   }, [roomStore, room?.code]);
 
+  useEffect(() => {
+    if (room?.status === "active") {
+      navigate("/game");
+    }
+  }, [navigate, room?.status]);
+
   if (!room) {
     return null;
   }
@@ -34,7 +40,7 @@ export function LobbyPage() {
   async function handleStart() {
     try {
       await roomStore.startGame();
-      navigate("/game");
+      // Navigation happens via the room.status effect above, for the host too.
     } catch {
       // surfaced via the shared `error` state below
     }
