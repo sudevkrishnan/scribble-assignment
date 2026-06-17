@@ -37,5 +37,11 @@
   from non-drawers in addition to the secret word.
 - This spec explicitly supersedes the prior phase's deferred player-name
   validation assumption — see Assumptions section.
-- Spec is ready for `/speckit-clarify` (optional, likely low-yield given the
-  above) or `/speckit-plan`.
+- 2026-06-17: `/speckit-analyze` (run post-plan/tasks) found a CRITICAL
+  coverage gap — nothing routed non-host participants to the game screen on
+  round start. Added FR-012, SC-006, US2 Acceptance Scenario 4, and an Edge
+  Case bullet to close it; also reworded the "Round" Key Entity (was
+  implying a separate stored object) for consistency with data-model.md.
+  All items still pass after the update.
+- Spec is ready for `/speckit-plan` (already executed) / `/speckit-tasks`
+  (re-run pending to add coverage for FR-012).

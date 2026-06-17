@@ -87,3 +87,31 @@ extension point).
 **Alternatives considered**: Gate on `room.status !== "active"` instead of
 field presence — equivalent in current scope, but field-presence is more
 direct evidence-of-assignment and reads clearer next to FR-011's wording.
+
+## Decision: How non-host participants reach the game screen
+
+**Decision**: Add a `useEffect` to `LobbyPage.tsx` that watches `room.status`
+(already updated every ~2s by phase 1's polling) and calls `navigate("/game")`
+for *any* participant once it becomes `"active"` — not only the host, who
+already navigates explicitly inside `handleStart()`.
+
+**Rationale**: `/speckit-analyze` found this gap before implementation: phase
+1's `LobbyPage` only navigated the host on a successful start; a guesser had
+no path to the game screen at all, since nothing else watched `room.status`.
+Reusing the existing polling mechanism (no WebSockets, per the constitution)
+to detect the transition is the natural fix — the data is already arriving
+every poll tick, only the reaction to it was missing.
+
+**Alternatives considered**: Polling on `GamePage` itself instead — rejected,
+since a participant who never leaves the Lobby would still never arrive
+there in the first place; the navigation trigger has to live where the
+participant currently is (the Lobby) MUST be added there for it to fire.
+
+**Testing note**: This is a navigation-effect wiring concern with trivial
+underlying logic (`status === "active"`); the project has no
+component-rendering test infrastructure (e.g., React Testing Library), and
+adding one solely for this one effect would be disproportionate scope creep
+per the constitution's Code Quality principle (no unjustified new
+dependencies). It is verified manually via `quickstart.md`'s two-tab
+walkthrough instead of an automated test — documented as a deliberate
+trade-off, not an oversight.

@@ -26,8 +26,13 @@ cd frontend && npm install && npm run dev  # http://localhost:5173
 ### 2. Drawer assignment (US2)
 
 1. Tab A creates a room (becomes host); Tab B joins.
-2. Tab A starts the game (per phase 1's host-gated start).
-3. On the Game screen in both tabs, confirm Tab A's name is labeled
+2. Tab A starts the game (per phase 1's host-gated start) — Tab A navigates
+   to the Game screen immediately.
+3. Without touching Tab B, wait up to ~2 seconds (one poll cycle) and
+   confirm Tab B is automatically taken to the Game screen too, with no
+   manual action — this is the part `/speckit-analyze` flagged as missing
+   before implementation.
+4. On the Game screen in both tabs, confirm Tab A's name is labeled
    "Drawer" and Tab B's is not, in both tabs' views.
 
 ### 3. Deterministic secret word (US3)

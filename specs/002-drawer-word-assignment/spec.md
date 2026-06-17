@@ -70,6 +70,10 @@ the host as "Drawer" and every other participant as a guesser.
 3. **Given** the round has started, **When** a non-drawer participant views
    the game screen, **Then** they are clearly identified as a guesser, not
    as the drawer.
+4. **Given** a non-host participant is on the Lobby screen, **When** the
+   host starts the game, **Then** that participant is automatically taken
+   to the game screen — they do not need to take any manual action to get
+   there.
 
 ---
 
@@ -145,6 +149,9 @@ candidate word list appears anywhere.
 - If the host starts the game more than once (e.g., a double-click or a
   retried request), the same drawer and same secret word MUST result — no
   re-randomization or reassignment on a repeated start.
+- A guesser who is mid-poll when the host starts the game MUST still reach
+  the game screen automatically by the next polling cycle that observes the
+  room's active status — not only on a manual page reload.
 
 ## Requirements *(mandatory)*
 
@@ -173,12 +180,16 @@ candidate word list appears anywhere.
   to a non-drawer participant's client.
 - **FR-011**: System MUST produce the same drawer and the same secret word
   if the start action is repeated for a room that has already started.
+- **FR-012**: System MUST take every connected participant's client to the
+  game screen once the room's status becomes active — not only the
+  participant who triggered the start action.
 
 ### Key Entities
 
-- **Round**: The single active round for a room once started; has exactly
-  one drawer (a Participant) and one secret word (drawn from the starter
-  list).
+- **Round**: Not a separate stored object — it's the active-room state
+  itself (the room's drawer and secret word, present once `status` is
+  active). Conceptually "one round," but represented as fields on the
+  existing Room, not a distinct entity.
 - **Participant** *(extends the prior phase's entity)*: Gains a derived
   drawer/guesser distinction for the active round, in addition to its
   existing host/non-host distinction.
@@ -200,6 +211,9 @@ candidate word list appears anywhere.
 - **SC-005**: 0% of data delivered to a non-drawer participant's client
   contains the secret word or the candidate word list, across 100% of
   inspected requests/responses for that participant.
+- **SC-006**: 100% of connected participants — host and guessers alike —
+  reach the game screen within one polling cycle (~2s) of the round
+  starting, with no manual action required from non-host participants.
 
 ## Assumptions
 

@@ -94,9 +94,13 @@ frontend/
 │   │   │                      #         gains secretWord?
 │   │   └── api.test.ts        # MODIFY: add case(s) reflecting the new fields
 │   └── pages/
-│       └── GamePage.tsx       # MODIFY: label the drawer for every viewer; show
-│                               #         the secret word only when room.secretWord
-│                               #         is present (i.e., viewer is the drawer)
+│       ├── GamePage.tsx       # MODIFY: label the drawer for every viewer; show
+│       │                      #         the secret word only when room.secretWord
+│       │                      #         is present (i.e., viewer is the drawer)
+│       └── LobbyPage.tsx      # MODIFY: navigate every participant (not only the
+│                               #         host) to /game once room.status becomes
+│                               #         "active" (closes a coverage gap found by
+│                               #         /speckit-analyze — see research.md)
 └── tests/                      # (none beyond existing co-located *.test.ts)
 ```
 
